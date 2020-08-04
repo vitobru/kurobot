@@ -12,8 +12,9 @@ bot = commands.Bot(command_prefix='!')
 
 print('Kuro Bot v0.01 - by Vitobru')
 
-
-print('Kuro is ready!')
+@bot.event
+async def on_ready():
+    print(f'Kuro is ready!')
 
 @bot.event
 async def on_member_join(member):
@@ -21,6 +22,11 @@ async def on_member_join(member):
     await member.dm_channel.send(
         f'Hey, {member.name}. Welcome to the server. Sit around and relax or something.'
     )
+
+@bot.command(name='about', help='will show an about dialog, showing info about the bot.')
+async def about(ctx):
+    response = '``Kuro Bot v0.01 - Written in Python by Vitobru``     URL: https://github.com/vitobru/kurobot'
+    await ctx.send(response)
 
 @bot.command(name='test', help='will send the text that follows the command as a test.')
 async def test(ctx, *, arg):
