@@ -1,31 +1,20 @@
-#client
+#Kuro Bot v0.01 - by Vitobru
 import os
 import random
 
-import discord
+from discord.ext import commands
 from dotenv import load_dotenv
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
-client = discord.Client()
+bot = commands.Bot(command_prefix='!')
 
-@client.event
-async def on_ready():
-    print(f'{client.user.name} has connected to Discord!')
+print('Kuro Bot v0.01 - by Vitobru')
+print('Kuro is ready!')
 
-@client.event
-async def on_member_join(member):
-    await member.create_dm()
-    await member.dm_channel.send(
-        f'Hey, {member.name}. Welcome to the server. Sit down and relax or something. The lolis are here.'
-    )
-
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
-
+@bot.command(name='quotes', help='has kuro give out quotes from F/GO or Kaleid Liner')
+async def quotes(ctx):
     kuro_quotes = [
         'Mana supply, pretty please?',
         (
@@ -36,8 +25,18 @@ async def on_message(message):
         'I’m a little tired. Mana transfer please, Master',
     ]
     
-    if message.content == '!quotes':
-        response = random.choice(kuro_quotes)
-        await message.channel.send(response)
+    response = random.choice(kuro_quotes)
+    await ctx.send(response)
 
-client.run(TOKEN)
+@bot.command(name='kiss', help='[NSFW] gives out a gif of kissing from our one and only succubus.')
+async def kisses(ctx):
+    kuro_kiss = [
+        'https://cdn.discordapp.com/attachments/734623501788512258/739787730476859502/kuro-illya-makeout.gif',
+        'https://img2.gelbooru.com/images/6a/9e/6a9e51ca1241bc59a9a556e946078cb0.gif',
+        'https://i.pinimg.com/originals/f3/e8/e4/f3e8e48b571ea57d0e013fa508346b7b.gif',
+    ]
+    
+    response = random.choice(kuro_kiss)
+    await ctx.send(response)
+
+bot.run(TOKEN)
