@@ -1,1 +1,1 @@
-# Kuro Bot v.0.1
+# Kuro Bot v.0.01
