@@ -1,4 +1,4 @@
-import discord, pickledb, random, time, math, re, youtube_dl, os, glob
+import discord, pickledb, random, time, math, re, youtube_dl, os, glob, uuid
 
 initTime = time.time()
 
@@ -18,19 +18,12 @@ client = discord.Client()
 
 version = "0.3.2"
 
-prefix = "$"
+prefix = "%"
 
 vclients = {}
 
 disabledCommands=pickledb.load('disabledCommands.db',False)
 prefixes=pickledb.load('prefixes.db',False)
-
-idCounter = -1
-        
-def getID():
-    global idCounter
-    idCounter+=1
-    return idCounter
 
 def setDB(database,key,val):
     if(database.set(key,val)):
@@ -39,15 +32,15 @@ def setDB(database,key,val):
     else:
         return -1
 
-ydl_opts = {
-    'format': 'bestaudio/best',
-    'postprocessors': [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'mp3',
-        'preferredquality': '192',
-    }],
-    'outtmpl': str(getID())+".tmp"
-}
+class NoopLogger(object):
+    def debug(self, msg):
+        pass
+
+    def warning(self, msg):
+        pass
+
+    def error(self, msg):
+        pass
 
 print('Kuro Bot v'+version+' - by Vitobru and armeabi')
 
@@ -164,9 +157,20 @@ async def on_message(message):
         r'(?::\d+)?' # optional port
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
         if(re.match(validator, linkstr)is not None):
-            filename = str(idCounter)+".mp3"
+            filename = str(uuid.uuid4())
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+                'outtmpl': filename+".tmp",
+                'logger': NoopLogger()
+            }
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([linkstr])
+                filename = filename+".mp3"
                 for vc in message.guild.voice_channels:                                                       
                     for memb in vc.members:                                                                   
                         if memb.id == message.author.id:                                                      
@@ -183,7 +187,7 @@ async def on_message(message):
                                 vclients[message.guild.id].play(discord.FFmpegPCMAudio(filename))
         elif(len(message.attachments)>0):
             if("mp3" in message.attachments[0].url):
-                filename = str(getID())+".mp3"
+                filename = str(uuid.uuid4())+".mp3"
                 await message.attachments[0].save(filename)
                 for vc in message.guild.voice_channels:
                     for memb in vc.members:
