@@ -70,7 +70,7 @@ async def on_message(message):
         return
 
     disabled = disabledCommands.get(str(message.guild.id))
-    if disabled is not None:
+    if disabled is not False:
         if message.content.replace(prefix,"") in disabled:
             if(message.content.replace(prefix,"") in ["disable","setprefix"]):
                 pass
