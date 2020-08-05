@@ -1,6 +1,6 @@
-import discord
-import pickledb
-import random
+import discord, pickledb, random, time, math, uuid, re
+
+initTime = time.time()
 
 # put your token into the "token" file.
 
@@ -8,34 +8,126 @@ TOKEN=str(open("token","r").read())
 
 client = discord.Client()
 
+version = "0.2.1"
+
+prefix = "$"
+
+vclients = {}
+
 @client.event
 async def on_ready():
-    print('Kuro Bot v0.1.1 - by Vitobru and armeabi')
+    print('Kuro Bot v'+version+' - by Vitobru and armeabi')
     print('We have logged in as {0.user}'.format(client))
-
+    
 @client.event
 async def on_message(message):
     if message.author == client.user:
         return
 
-    if message.content == ('$about'):
-        embed = discord.Embed(title="KuroBot v0.1.1", description="A bot written in discord.py by\nvito#1072 and armeabi#3621.")
+    if message.content == (prefix+'join'):
+        for vc in message.guild.voice_channels:
+            for memb in vc.members:
+                if memb.id == message.author.id:
+                    vclients[message.guild.id] = await vc.connect()
+    
+    if message.content.startswith(prefix+'play'):
+        linkstr = "".join(message.content.split(" ")[1:])
+        validator = re.compile(
+        r'^(?:http)s?://' # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+        r'localhost|' #localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+        r'(?::\d+)?' # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+        if(re.match(validator, linkstr)is not None):
+            await message.channel.send("TODO: Implement link streaming.")
+        if(len(message.attachments)>0):
+            if("mp3" in message.attachments[0].url):
+                filename = str(uuid.uuid4())+".mp3"
+                await message.attachments[0].save(filename)
+                for vc in message.guild.voice_channels:
+                    for memb in vc.members:
+                        if memb.id == message.author.id:
+                            try:
+                                if(vclients[message.guild.id]):
+                                    if(vclients[message.guild.id].is_playing() or vclients[message.guild.id].is_paused()):
+                                        await message.channel.send("I'm already playing something.")
+                                    else:
+                                        await message.channel.send("Playing now...")
+                                        vclients[message.guild.id].play(discord.FFmpegPCMAudio(filename))
+                            except:
+                                vclients[message.guild.id] = await vc.connect()
+                                await message.channel.send("Playing now...")
+                                vclients[message.guild.id].play(discord.FFmpegPCMAudio(filename))
+            else:
+                await message.channel.send("I can't play anything from attachments other than MP3 files.")
+
+    if message.content == (prefix+'pause'):
+        if(vclients[message.guild.id].is_paused()):
+            await message.channel.send("I'm already paused.")
+            return
+        else:
+            vclients[message.guild.id].pause()
+            await message.channel.send("Pausing...")
+
+    if message.content == (prefix+'resume'):
+        if(vclients[message.guild.id].is_playing()):
+            await message.channel.send("I'm already playing something.")
+            return
+        else:
+            vclients[message.guild.id].resume()
+            await message.channel.send("Resuming...")
+
+    if message.content == (prefix+'stop'):
+        if(vclients[message.guild.id]):
+            vclients[message.guild.id].stop()
+            await message.channel.send("Stopping...")
+        else:
+            await message.channel.send("I'm not playing anything.")
+                
+    if message.content == (prefix+'kuro'):
+        await message.channel.send(file=discord.File("resources/kuro.jpg"))
+        
+    if message.content == (prefix+'latency'):
+        timestr = str(round(client.latency,3))
+        timestr = timestr.replace(".","")
+        timestr = timestr.lstrip("0")
+        embed = discord.Embed(title="Latency")
+        embed.set_footer(text="KuroBot")
+        embed.add_field(name="millis", value=(timestr))
+        await message.channel.send(embed=embed)
+        
+    if message.content == (prefix+'uptime'):
+        secs=math.floor(time.time()-initTime)
+        mins=math.floor(secs/60) # 1 min = 60 secs
+        hrs=math.floor(mins/60) # 1 hr = 60 mins
+        dys=math.floor(hrs/24) # 1 dy = 24 hrs
+        embed = discord.Embed(title="Uptime")
+        embed.set_footer(text="KuroBot")
+        embed.add_field(name="seconds", value=str(secs))
+        embed.add_field(name="minutes", value=str(mins))
+        embed.add_field(name="hours", value=str(hrs))
+        embed.add_field(name="days", value=str(dys))
+        await message.channel.send(embed=embed)
+    
+    if message.content == (prefix+'about'):
+        embed = discord.Embed(title="KuroBot v"+version, description="A bot written in discord.py by\nvito#1072 and armeabi#3621.")
         embed.set_thumbnail(url="https://media.discordapp.net/attachments/740369729188921345/740404293718245376/smug-upscale.png?width=529&height=482")
         embed.set_footer(text="KuroBot")
         embed.add_field(name="GitHub", value="https://github.com/vitobru/kurobot")
         await message.channel.send(embed=embed)
 
-    if message.content == ('$fuckoff'):
+    if message.content == (prefix+'fuckoff'):
         if(not message.author.id == 437748282731659271):
             return
         else:
-            await message.channel.send("Okay, master... ;-;")
+            await message.channel.send("Okay, master...")
             await client.logout()
             quit()
     
-    if message.content == ('$kiss'):
+    if message.content == (prefix+'kiss'):
         if(not message.channel.is_nsfw()):
-            await message.channel.send("B-baka, this channel isn't NSFW! Go somewhere else! o////o")
+            await message.channel.send("Hm, it seems this channel isn't marked NSFW. Try again somewhere else.")
             return
 
         kuro_kiss = [
@@ -49,18 +141,20 @@ async def on_message(message):
         response = random.choice(kuro_kiss)
         await message.channel.send(response)
 
-    if message.content == ('$help'):
+    if message.content == (prefix+'help'):
         embed = discord.Embed()
         embed.set_footer(text="KuroBot")
         embed.add_field(name="about", value="will show an about dialog,\nshowing info about the bot.", inline=True)
         embed.add_field(name="google", value="lemme google that for ya. \nreturns a google URL for \nwhatever you typed in.", inline=True)
         embed.add_field(name="quote", value="returns a Kuro quote from\nF/GO or Kaleid Liner.", inline=True)
         embed.add_field(name="kiss", value="[NSFW] gives out a gif of\nkissing from our one and\nonly succubus.", inline=True)
+        embed.add_field(name="uptime", value="returns the bot's uptime.",inline=True);
+        embed.add_field(name="latency", value="returns the bot's latency.",inline=True);
         embed.add_field(name="more to be added soon", value="please check back for\nmore commands!", inline=True)
 
         await message.channel.send(embed=embed)
         
-    if message.content == ('$quote'):
+    if message.content == (prefix+'quote'):
         kuro_quotes = [
             'Mana supply, pretty please?',
             (
@@ -85,7 +179,7 @@ async def on_message(message):
         response = random.choice(kuro_quotes)
         await message.channel.send(response)
     
-    if message.content.startswith('$google'):
+    if message.content.startswith(prefix+'google'):
         query = "+".join(message.content.split(" ")[1:])
         embed = discord.Embed(description="https://www.google.com/search?hl=en_US&q="+query)
         embed.set_author(name="Google Search")
