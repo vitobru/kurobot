@@ -1,6 +1,14 @@
-import discord, pickledb, random, time, math, uuid, re, youtube_dl, urllib.parse
+import discord, pickledb, random, time, math, uuid, re, youtube_dl, urllib.parse, os, glob
 
 initTime = time.time()
+
+print("Clearing temp files...")
+files = glob.glob('./*.mp3')
+for file in files:
+    try:
+        os.remove(file)
+    except:
+        print("Error while deleting ",file)
 
 # put your token into the "token" file.
 
@@ -8,9 +16,9 @@ TOKEN=str(open("token","r").read())
 
 client = discord.Client()
 
-version = "0.2.2"
+version = "0.2.3"
 
-prefix = "$"
+prefix = "%"
 
 vclients = {}
 
