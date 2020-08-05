@@ -11,6 +11,12 @@ pip install -U youtube_dl
 pip install -U PyNaCl
 ```
 
+Then, you'll need to install ffmpeg however you can.
+On Arch Linux, it's:
+```
+pacman -S ffmpeg
+```
+
 **Team:**
 
 Lead Programmers - Vitobru, armeabiv7
