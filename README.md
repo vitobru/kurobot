@@ -1,4 +1,5 @@
 # Kuro Bot v.0.3.1
+
 ###### A Discord bot created by Vitobru and Alatar
 
 **Info:** This is a small Discord bot written sitting on top of the discord.py library. Still in its alpha stages of development, it can perform some basic tasks such as latency, uptime, greeting, and playing uploaded mp3 files in VC, all prefaced by the $ parameter (soon to be customisable).

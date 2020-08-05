@@ -18,7 +18,7 @@ client = discord.Client()
 
 version = "0.3.1"
 
-prefix = "%"
+prefix = "$"
 
 vclients = {}
 
@@ -97,6 +97,28 @@ async def on_message(message):
                 'https://img2.gelbooru.com/images/6d/71/6d7117d93a9d99d60a97edc5595b240d.gif']
             response = random.choice(kuro_kiss)
             await message.channel.send(response)
+        elif args[0]=="quote":
+            kuro_quotes = [
+                'Mana supply, pretty please?',
+            (
+                '...What is that look for? '
+                'I get it, everyone else is taking off their clothes and wearing new outfits. '
+                'You were looking forward to it, weren\'t you? What a pervert.'
+            ),
+                'I\'m a little tired. Mana transfer please, Master.',
+                'I\'m low on energy... Isn\'t there a cute girl filled with some to spare around here somewhere? A Caster would be perfect.',
+            (
+                'I wonder what your magical energy tastes like... '
+                'Hey, no need to run away. I was just kidding, silly. '
+                'If I was serious, you wouldn\'t be able to resist. You wouldn\'t want to.'
+            ),
+            (
+                'It\'s strange... I feel at ease just being in the same room as you. '
+                'You\'re the first I\'ve felt this way with, outside of my family. '
+                'Can I borrow your shoulder . . . just for a minute?'
+            )]
+            response = random.choice(kuro_quotes)
+            await message.channel.send(response)
         elif args[0]=="e621":
             return
         elif args[0]=="danbooru":
@@ -115,8 +137,22 @@ async def on_message(message):
     if message.content == (prefix+'join'):
         for vc in message.guild.voice_channels:
             for memb in vc.members:
-                if memb.id == message.author.id:
-                    vclients[message.guild.id] = await vc.connect()
+                try:
+                    if memb.id == message.author.id:
+                        vclients[message.guild.id] = await vc.connect()
+                except:
+                    await message.channel.send("You must be in a VC.")
+        
+    if message.content == (prefix+'leave'):
+        if(not message.author.id == 408372847652634624):
+            return
+        else:
+            try:
+                if(vclients[message.guild.id]):
+                    await vclients[message.guild.id].disconnect()
+                    await message.channel.send("Leaving...")
+            except:
+                await message.channel.send("I'm not in a VC.")
     
     if message.content.startswith(prefix+'play'):
         linkstr = "".join(message.content.split(" ")[1:])
@@ -242,11 +278,11 @@ async def on_message(message):
         embed.set_footer(text="KuroBot")
         embed.add_field(name="about", value="will show an about dialog,\nshowing info about the bot.", inline=True)
         embed.add_field(name="google", value="lemme google that for ya. \nreturns a google URL for \nwhatever you typed in.", inline=True)
-        embed.add_field(name="quote", value="returns a Kuro quote from\nF/GO or Kaleid Liner.", inline=True)
         embed.add_field(name="nsfw", value="[NSFW] multi-source nsfw command,\ndocs will be created soon.", inline=True)
         embed.add_field(name="kuro", value="simply sends a kuro.", inline=True)
         embed.add_field(name="uptime", value="returns the bot's uptime.",inline=True);
         embed.add_field(name="latency", value="returns the bot's latency.",inline=True);
+        embed.add_field(name="leave", value="[OWNER ONLY] disconnects kuro from vc.", inline=True);
         embed.add_field(name="join", value="has kuro join your channel.",inline=True);
         embed.add_field(name="play", value="plays an uploaded mp3\nfile or youtube/soundcloud\netc. link", inline=True);
         embed.add_field(name="pause", value="pauses music playback.",inline=True);
@@ -256,31 +292,6 @@ async def on_message(message):
 
         await message.channel.send(embed=embed)
         
-    if message.content == (prefix+'quote'):
-        kuro_quotes = [
-            'Mana supply, pretty please?',
-            (
-                '...What is that look for? '
-                'I get it, everyone else is taking off their clothes and wearing new outfits. '
-                'You were looking forward to it, weren\'t you? What a pervert.'
-            ),
-            'I\'m a little tired. Mana transfer please, Master.',
-            'I\'m low on energy... Isn\'t there a cute girl filled with some to spare around here somewhere? A Caster would be perfect.',
-            (
-                'I wonder what your magical energy tastes like... '
-                'Hey, no need to run away. I was just kidding, silly. '
-                'If I was serious, you wouldn\'t be able to resist. You wouldn\'t want to.'
-            ),
-            (
-                'It\'s strange... I feel at ease just being in the same room as you. '
-                'You\'re the first I\'ve felt this way with, outside of my family. '
-                'Can I borrow your shoulder . . . just for a minute?'
-            ),
-        ]
-
-        response = random.choice(kuro_quotes)
-        await message.channel.send(response)
-    
     if message.content.startswith(prefix+'google'):
         query = "+".join(message.content.split(" ")[1:])
         embed = discord.Embed(description="https://www.google.com/search?hl=en_US&q="+query)
