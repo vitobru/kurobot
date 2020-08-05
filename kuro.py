@@ -86,7 +86,7 @@ async def on_message(message):
         else:
             await message.channel.send("I'm not playing anything.")
                 
-    if message.content == ('$kuro'):
+    if message.content == (prefix+'kuro'):
         file = discord.File("resources/kuro.png", filename="kuro.png")
         embed = discord.Embed(title="Kuro")
         embed.set_image(url="attachment://kuro.png")
