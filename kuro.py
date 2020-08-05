@@ -202,6 +202,11 @@ async def on_message(message):
         embed.add_field(name="kuro", value="simply sends a kuro.", inline=True)
         embed.add_field(name="uptime", value="returns the bot's uptime.",inline=True);
         embed.add_field(name="latency", value="returns the bot's latency.",inline=True);
+        embed.add_field(name="join", value="has kuro join your channel.",inline=True);
+        embed.add_field(name="play", value="plays an uploaded mp3\nfile or youtube/soundcloud\netc. link", inline=True);
+        embed.add_field(name="pause", value="pauses music playback.",inline=True);
+        embed.add_field(name="resume", value="resumes music playback.",inline=True);
+        embed.add_field(name="stop", value="stops music playback.",inline=True);
         embed.add_field(name="more to be added soon", value="please check back for\nmore commands!", inline=True)
 
         await message.channel.send(embed=embed)
