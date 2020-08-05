@@ -17,6 +17,8 @@ On Arch Linux, it's:
 pacman -S ffmpeg
 ```
 
+Please note that Windows is not supported, you will need to fix the issues yourself.
+
 **Team:**
 
 Lead Programmers - Vitobru, armeabiv7
