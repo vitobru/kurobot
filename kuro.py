@@ -1,4 +1,4 @@
-import discord, pickledb, random, time, math, uuid, re
+import discord, pickledb, random, time, math, uuid, re, youtube_dl, urllib.parse
 
 initTime = time.time()
 
@@ -13,6 +13,25 @@ version = "0.2.2"
 prefix = "$"
 
 vclients = {}
+
+class YDLogger(object):                                                                                       
+    def debug(self, msg):                                                                                     
+        pass                                                                                                  
+    def warning(self, msg):                                                                                   
+        pass                                                                                                  
+    def error(self, msg):                                                                                     
+        pass     
+
+ydl_opts = {
+    'format': 'bestaudio/best',
+    'postprocessors': [{
+        'key': 'FFmpegExtractAudio',
+        'preferredcodec': 'mp3',
+        'preferredquality': '192',
+    }],
+    'outtmpl': '%(id)s.%(ext)s',
+    'logger': YDLogger()
+}
 
 print('Kuro Bot v'+version+' - by Vitobru and armeabi')
 
@@ -41,7 +60,26 @@ async def on_message(message):
         r'(?::\d+)?' # optional port
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
         if(re.match(validator, linkstr)is not None):
-            await message.channel.send("TODO: Implement link streaming.")
+            urldata = urllib.parse.urlparse(linkstr)
+            query = urllib.parse.parse_qs(urldata.query)
+            filename = str(query["v"][0])+".mp3"
+            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([linkstr])
+                for vc in message.guild.voice_channels:                                                       
+                    for memb in vc.members:                                                                   
+                        if memb.id == message.author.id:                                                      
+                            try:                                                                              
+                                if(vclients[message.guild.id]):                                               
+                                    if(vclients[message.guild.id].is_playing() or vclients[message.guild.id].is_paused()):                                                                                                  
+                                        await message.channel.send("I'm already playing something.")          
+                                    else:                                                                     
+                                        await message.channel.send("Playing now...")                          
+                                        vclients[message.guild.id].play(discord.FFmpegPCMAudio(filename))     
+                            except:                                                                           
+                                vclients[message.guild.id] = await vc.connect()                               
+                                await message.channel.send("Playing now...")                                  
+                                vclients[message.guild.id].play(discord.FFmpegPCMAudio(filename))
+            
         if(len(message.attachments)>0):
             if("mp3" in message.attachments[0].url):
                 filename = str(uuid.uuid4())+".mp3"
