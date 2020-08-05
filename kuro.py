@@ -18,7 +18,7 @@ client = discord.Client()
 
 version = "0.3.1"
 
-prefix = "$"
+prefix = "%"
 
 vclients = {}
 
@@ -70,13 +70,14 @@ async def on_message(message):
         return
 
     disabled = disabledCommands.get(str(message.guild.id))
-    if message.content.replace(prefix,"") in disabled:
-        if(message.content.replace(prefix,"") in ["disable","setprefix"]):
-            pass
+    if disabled is not None:
+        if message.content.replace(prefix,"") in disabled:
+            if(message.content.replace(prefix,"") in ["disable","setprefix"]):
+                pass
+            else:
+                return
         else:
-            return
-    else:
-        pass
+            pass
         
     if message.content.startswith(prefix+'disable'):
         todisable = " ".join(message.content.split(" ")[1:])
