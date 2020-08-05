@@ -1,4 +1,4 @@
-import discord, pickledb, random, time, math, uuid, re, youtube_dl, urllib.parse, os, glob
+import discord, pickledb, random, time, math, re, youtube_dl, os, glob
 
 initTime = time.time()
 
@@ -16,11 +16,14 @@ TOKEN=str(open("token","r").read())
 
 client = discord.Client()
 
-version = "0.2.3"
+version = "0.3.1"
 
 prefix = "%"
 
 vclients = {}
+
+disabledCommands=pickledb.load('disabledCommands.db',False)
+prefixes=pickledb.load('prefixes.db',False)
 
 class YDLogger(object):                                                                                       
     def debug(self, msg):                                                                                     
@@ -28,7 +31,21 @@ class YDLogger(object):
     def warning(self, msg):                                                                                   
         pass                                                                                                  
     def error(self, msg):                                                                                     
-        pass     
+        pass
+
+idCounter = -1
+        
+def getID():
+    global idCounter
+    idCounter+=1
+    return idCounter
+
+def setDB(database,key,val):
+    if(database.set(key,val)):
+        database.dump()
+        return 1
+    else:
+        return -1
 
 ydl_opts = {
     'format': 'bestaudio/best',
@@ -37,7 +54,7 @@ ydl_opts = {
         'preferredcodec': 'mp3',
         'preferredquality': '192',
     }],
-    'outtmpl': '%(id)s.%(ext)s',
+    'outtmpl': str(getID())+".tmp",
     'logger': YDLogger()
 }
 
@@ -52,6 +69,49 @@ async def on_message(message):
     if message.author == client.user:
         return
 
+    disabled = disabledCommands.get(str(message.guild.id))
+    if message.content.replace(prefix,"") in disabled:
+        if(message.content.replace(prefix,"") in ["disable","setprefix"]):
+            pass
+        else:
+            return
+    else:
+        pass
+        
+    if message.content.startswith(prefix+'disable'):
+        todisable = " ".join(message.content.split(" ")[1:])
+        if((setDB(disabledCommands,str(message.guild.id),todisable))==1):
+            await message.channel.send("Success.")
+
+    if message.content.startswith(prefix+'nsfw'):
+        if(not message.channel.is_nsfw()):
+            await message.channel.send("Hm, it seems this channel isn't marked NSFW. Try again somewhere else.")
+            return
+        args = message.content.split(" ")[1:]
+        if args[0]=="kiss":
+            kuro_kiss = [                                                                                     
+                'https://cdn.discordapp.com/attachments/734623501788512258/739787730476859502/kuro-illya-makeout.gif',
+                'https://img2.gelbooru.com/images/6a/9e/6a9e51ca1241bc59a9a556e946078cb0.gif',
+                'https://i.pinimg.com/originals/f3/e8/e4/f3e8e48b571ea57d0e013fa508346b7b.gif',       
+                'https://pa1.narvii.com/6202/814df9da373b94a18c76e1e7b4283a8e619f801f_hq.gif',       
+                'https://img2.gelbooru.com/images/6d/71/6d7117d93a9d99d60a97edc5595b240d.gif']
+            response = random.choice(kuro_kiss)
+            await message.channel.send(response)
+        elif args[0]=="e621":
+            return
+        elif args[0]=="danbooru":
+            return
+        elif args[0]=="gelbooru":
+            return
+        elif args[0]=="rule34":
+            return
+        elif args[0]=="paheal":
+            return
+        elif args[0]=="yandere":
+            return
+        else:
+            await message.channel.send("Invalid source.")
+            
     if message.content == (prefix+'join'):
         for vc in message.guild.voice_channels:
             for memb in vc.members:
@@ -68,9 +128,7 @@ async def on_message(message):
         r'(?::\d+)?' # optional port
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
         if(re.match(validator, linkstr)is not None):
-            urldata = urllib.parse.urlparse(linkstr)
-            query = urllib.parse.parse_qs(urldata.query)
-            filename = str(query["v"][0])+".mp3"
+            filename = str(idCounter)+".mp3"
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([linkstr])
                 for vc in message.guild.voice_channels:                                                       
@@ -87,10 +145,12 @@ async def on_message(message):
                                 vclients[message.guild.id] = await vc.connect()                               
                                 await message.channel.send("Playing now...")                                  
                                 vclients[message.guild.id].play(discord.FFmpegPCMAudio(filename))
+        else:
+            await message.channel.send("Invalid music link.")
             
         if(len(message.attachments)>0):
             if("mp3" in message.attachments[0].url):
-                filename = str(uuid.uuid4())+".mp3"
+                filename = str(getID())+".mp3"
                 await message.attachments[0].save(filename)
                 for vc in message.guild.voice_channels:
                     for memb in vc.members:
@@ -149,10 +209,11 @@ async def on_message(message):
         await message.channel.send(embed=embed)
         
     if message.content == (prefix+'uptime'):
-        secs=math.floor(time.time()-initTime)
-        mins=math.floor(secs/60) # 1 min = 60 secs
-        hrs=math.floor(mins/60) # 1 hr = 60 mins
-        dys=math.floor(hrs/24) # 1 dy = 24 hrs
+        tsecs=math.floor(time.time()-initTime)
+        secs=tsecs%60
+        mins=tsecs//60 # 1 min = 60 secs
+        hrs=mins//60 # 1 hr = 60 mins
+        dys=hrs//24 # 1 dy = 24 hrs
         embed = discord.Embed(title="Uptime")
         embed.set_footer(text="KuroBot")
         embed.add_field(name="seconds", value=str(secs))
@@ -176,29 +237,13 @@ async def on_message(message):
             await client.logout()
             quit()
     
-    if message.content == (prefix+'kiss'):
-        if(not message.channel.is_nsfw()):
-            await message.channel.send("Hm, it seems this channel isn't marked NSFW. Try again somewhere else.")
-            return
-
-        kuro_kiss = [
-        'https://cdn.discordapp.com/attachments/734623501788512258/739787730476859502/kuro-illya-makeout.gif',
-        'https://img2.gelbooru.com/images/6a/9e/6a9e51ca1241bc59a9a556e946078cb0.gif',
-        'https://i.pinimg.com/originals/f3/e8/e4/f3e8e48b571ea57d0e013fa508346b7b.gif',
-        'https://pa1.narvii.com/6202/814df9da373b94a18c76e1e7b4283a8e619f801f_hq.gif',
-        'https://img2.gelbooru.com/images/6d/71/6d7117d93a9d99d60a97edc5595b240d.gif',
-        ]
-
-        response = random.choice(kuro_kiss)
-        await message.channel.send(response)
-
     if message.content == (prefix+'help'):
         embed = discord.Embed()
         embed.set_footer(text="KuroBot")
         embed.add_field(name="about", value="will show an about dialog,\nshowing info about the bot.", inline=True)
         embed.add_field(name="google", value="lemme google that for ya. \nreturns a google URL for \nwhatever you typed in.", inline=True)
         embed.add_field(name="quote", value="returns a Kuro quote from\nF/GO or Kaleid Liner.", inline=True)
-        embed.add_field(name="kiss", value="[NSFW] gives out a gif of\nkissing from our one and\nonly succubus.", inline=True)
+        embed.add_field(name="nsfw", value="[NSFW] multi-source nsfw command,\ndocs will be created soon.", inline=True)
         embed.add_field(name="kuro", value="simply sends a kuro.", inline=True)
         embed.add_field(name="uptime", value="returns the bot's uptime.",inline=True);
         embed.add_field(name="latency", value="returns the bot's latency.",inline=True);
