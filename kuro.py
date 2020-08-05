@@ -25,14 +25,6 @@ vclients = {}
 disabledCommands=pickledb.load('disabledCommands.db',False)
 prefixes=pickledb.load('prefixes.db',False)
 
-class YDLogger(object):                                                                                       
-    def debug(self, msg):                                                                                     
-        pass                                                                                                  
-    def warning(self, msg):                                                                                   
-        pass                                                                                                  
-    def error(self, msg):                                                                                     
-        pass
-
 idCounter = -1
         
 def getID():
@@ -54,8 +46,7 @@ ydl_opts = {
         'preferredcodec': 'mp3',
         'preferredquality': '192',
     }],
-    'outtmpl': str(getID())+".tmp",
-    'logger': YDLogger()
+    'outtmpl': str(getID())+".tmp"
 }
 
 print('Kuro Bot v'+version+' - by Vitobru and armeabi')
@@ -78,7 +69,9 @@ async def on_message(message):
                 return
         else:
             pass
-        
+    else:
+        pass
+    
     if message.content.startswith(prefix+'disable'):
         todisable = " ".join(message.content.split(" ")[1:])
         if((setDB(disabledCommands,str(message.guild.id),todisable))==1):
@@ -182,10 +175,7 @@ async def on_message(message):
                                 vclients[message.guild.id] = await vc.connect()                               
                                 await message.channel.send("Playing now...")                                  
                                 vclients[message.guild.id].play(discord.FFmpegPCMAudio(filename))
-        else:
-            await message.channel.send("Invalid music link.")
-            
-        if(len(message.attachments)>0):
+        elif(len(message.attachments)>0):
             if("mp3" in message.attachments[0].url):
                 filename = str(getID())+".mp3"
                 await message.attachments[0].save(filename)
@@ -205,6 +195,9 @@ async def on_message(message):
                                 vclients[message.guild.id].play(discord.FFmpegPCMAudio(filename))
             else:
                 await message.channel.send("I can't play anything from attachments other than MP3 files.")
+        else:
+            await message.channel.send("Invalid music link.")
+            return
 
     if message.content == (prefix+'pause'):
         if(vclients[message.guild.id].is_paused()):
