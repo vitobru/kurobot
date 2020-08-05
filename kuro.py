@@ -8,16 +8,17 @@ TOKEN=str(open("token","r").read())
 
 client = discord.Client()
 
-version = "0.2.1"
+version = "0.2.2"
 
 prefix = "$"
 
 vclients = {}
 
+print('Kuro Bot v'+version+' - by Vitobru and armeabi')
+
 @client.event
 async def on_ready():
-    print('Kuro Bot v'+version+' - by Vitobru and armeabi')
-    print('We have logged in as {0.user}'.format(client))
+    print('Logged in as {0.user}'.format(client))
     
 @client.event
 async def on_message(message):
@@ -85,8 +86,12 @@ async def on_message(message):
         else:
             await message.channel.send("I'm not playing anything.")
                 
-    if message.content == (prefix+'kuro'):
-        await message.channel.send(file=discord.File("resources/kuro.jpg"))
+    if message.content == ('$kuro'):
+        file = discord.File("resources/kuro.png", filename="kuro.png")
+        embed = discord.Embed(title="Kuro")
+        embed.set_image(url="attachment://kuro.png")
+        embed.set_footer(text="KuroBot")
+        await message.channel.send(file=file, embed=embed)
         
     if message.content == (prefix+'latency'):
         timestr = str(round(client.latency,3))
@@ -118,7 +123,7 @@ async def on_message(message):
         await message.channel.send(embed=embed)
 
     if message.content == (prefix+'fuckoff'):
-        if(not message.author.id == 437748282731659271):
+        if(not message.author.id == 408372847652634624):
             return
         else:
             await message.channel.send("Okay, master...")
@@ -148,6 +153,7 @@ async def on_message(message):
         embed.add_field(name="google", value="lemme google that for ya. \nreturns a google URL for \nwhatever you typed in.", inline=True)
         embed.add_field(name="quote", value="returns a Kuro quote from\nF/GO or Kaleid Liner.", inline=True)
         embed.add_field(name="kiss", value="[NSFW] gives out a gif of\nkissing from our one and\nonly succubus.", inline=True)
+        embed.add_field(name="kuro", value="simply sends a kuro.", inline=True)
         embed.add_field(name="uptime", value="returns the bot's uptime.",inline=True);
         embed.add_field(name="latency", value="returns the bot's latency.",inline=True);
         embed.add_field(name="more to be added soon", value="please check back for\nmore commands!", inline=True)
