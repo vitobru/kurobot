@@ -55,8 +55,11 @@ async def on_message(message):
     if message.content == (prefix+'join'):
         for vc in message.guild.voice_channels:
             for memb in vc.members:
-                if memb.id == message.author.id:
-                    vclients[message.guild.id] = await vc.connect()
+                try:
+                    if memb.id == message.author.id:
+                        vclients[message.guild.id] = await vc.connect()
+                except:
+                    await message.channel.send("You must be in a VC.")
         
     if message.content == (prefix+'leave'):
         if(not message.author.id == 408372847652634624):
@@ -160,10 +163,11 @@ async def on_message(message):
         await message.channel.send(embed=embed)
         
     if message.content == (prefix+'uptime'):
-        secs=math.floor(time.time()-initTime)
-        mins=math.floor(secs/60) # 1 min = 60 secs
-        hrs=math.floor(mins/60) # 1 hr = 60 mins
-        dys=math.floor(hrs/24) # 1 dy = 24 hrs
+        total_secs=math.floor(time.time()-initTime)
+        secs=total_secs%60
+        mins=total_secs//60 # 1 min = 60 secs
+        hrs=mins//60 # 1 hr = 60 mins
+        dys=hrs//24 # 1 dy = 24 hrs
         embed = discord.Embed(title="Uptime")
         embed.set_footer(text="KuroBot")
         embed.add_field(name="seconds", value=str(secs))
@@ -224,6 +228,10 @@ async def on_message(message):
         await message.channel.send(embed=embed)
         
     if message.content == (prefix+'quote'):
+        if(not message.channel.is_nsfw()):
+            await message.channel.send("Hm, it seems this channel isn't marked NSFW. Try again somewhere else.")
+            return
+        
         kuro_quotes = [
             'Mana supply, pretty please?',
             (
