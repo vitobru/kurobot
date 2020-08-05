@@ -16,9 +16,9 @@ TOKEN=str(open("token","r").read())
 
 client = discord.Client()
 
-version = "0.3.1"
+version = "0.3.2"
 
-prefix = "%"
+prefix = "$"
 
 vclients = {}
 
@@ -114,16 +114,22 @@ async def on_message(message):
             response = random.choice(kuro_quotes)
             await message.channel.send(response)
         elif args[0]=="e621":
+            await message.channel.send("**Source coming soon!**")
             return
         elif args[0]=="danbooru":
+            await message.channel.send("**Source coming soon!**")
             return
         elif args[0]=="gelbooru":
+            await message.channel.send("**Source coming soon!**")
             return
         elif args[0]=="rule34":
+            await message.channel.send("**Source coming soon!**")
             return
         elif args[0]=="paheal":
+            await message.channel.send("**Source coming soon!**")
             return
         elif args[0]=="yandere":
+            await message.channel.send("**Source coming soon!**")
             return
         else:
             await message.channel.send("Invalid source.")
