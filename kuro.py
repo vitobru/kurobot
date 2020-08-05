@@ -16,9 +16,9 @@ TOKEN=str(open("token","r").read())
 
 client = discord.Client()
 
-version = "0.2.3"
+version = "0.2.4"
 
-prefix = "%"
+prefix = "$"
 
 vclients = {}
 
@@ -57,6 +57,17 @@ async def on_message(message):
             for memb in vc.members:
                 if memb.id == message.author.id:
                     vclients[message.guild.id] = await vc.connect()
+        
+    if message.content == (prefix+'leave'):
+        if(not message.author.id == 408372847652634624):
+            return
+        else:
+            try:
+                if(vclients[message.guild.id]):
+                    await vclients[message.guild.id].disconnect()
+                    await message.channel.send("Leaving...")
+            except:
+                await message.channel.send("I'm not in a VC.")
     
     if message.content.startswith(prefix+'play'):
         linkstr = "".join(message.content.split(" ")[1:])
@@ -202,6 +213,7 @@ async def on_message(message):
         embed.add_field(name="kuro", value="simply sends a kuro.", inline=True)
         embed.add_field(name="uptime", value="returns the bot's uptime.",inline=True);
         embed.add_field(name="latency", value="returns the bot's latency.",inline=True);
+        embed.add_field(name="leave", value="[OWNER ONLY] disconnects kuro from vc.", inline=True);
         embed.add_field(name="join", value="has kuro join your channel.",inline=True);
         embed.add_field(name="play", value="plays an uploaded mp3\nfile or youtube/soundcloud\netc. link", inline=True);
         embed.add_field(name="pause", value="pauses music playback.",inline=True);
