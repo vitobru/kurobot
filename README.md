@@ -9,4 +9,8 @@ pip install -U discord.py
 pip install -U python-dotenv
 ```
 
+**Team:**
+Lead Programmers - Vitobru, armeabiv7
+Support & QA - alatartheblue42
+
 **Contact:** [BElISLEMusic@outlook.com](BElISLEMusic@outlook.com) if you wanna email me about the progress. Otherwise, just tweet me [@vitobrutweet](https://twitter.com/vitobrutweet/).
