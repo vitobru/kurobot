@@ -18,7 +18,7 @@ client = discord.Client()
 
 version = "0.3.3"
 
-prefix = "%"
+prefix = "$"
 
 vclients = {}
 
