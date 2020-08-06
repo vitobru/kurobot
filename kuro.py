@@ -1,11 +1,13 @@
 #KuroBot v0.3.5
-import discord, pickledb, random, time, math, re, youtube_dl, os, glob, uuid, datetime
+import discord, pickledb, random, time, math, re, youtube_dl, os, glob, uuid, datetime, asyncio
+from discord.ext import tasks
 
 initTime = time.time()
 
 print("Clearing temp files...")
 files = glob.glob('./*.mp3')
-for file in files:
+files2 = glob.glob('./queue-*')
+for file in zip(files,files2):
     try:
         os.remove(file)
     except:
@@ -17,7 +19,7 @@ TOKEN=str(open("token","r").read())
 
 client = discord.Client()
 
-version = "0.3.5"
+version = "0.4.1-indev"
 
 prefix = "$"
 
@@ -43,10 +45,31 @@ class NoopLogger(object):
 
 print('Kuro Bot v'+version+' - by Vitobru and armeabi')
 
+@tasks.loop(seconds=5.0)
+async def ensure_queue_loop():
+    try:
+        for vc in vclients.values():
+            if not vc.is_playing() or not vc.is_paused():
+                next_song=""
+                try:
+                    with open('queue-'+vc.guild.id,'r') as queue:
+                        next_song=queue.readline()
+                    with open('queue-'+vc.guild.id,'r') as queuein:
+                        data_to_write=queuein.read().splitlines(True)
+                    with open('queue-'+vc.guild.id,'w') as queueout:
+                        queueout.writelines(data_to_write[1:])
+                    vc.play(discord.FFmpegPCMAudio(filename))
+                except:
+                    pass
+    except:
+        pass
+
+ensure_queue_loop.start()
+    
 @client.event
 async def on_ready():
     print('Logged in as {0.user}'.format(client))
-    
+
 @client.event
 async def on_message(message):
     if message.author == client.user:
@@ -199,8 +222,10 @@ async def on_message(message):
                         if memb.id == message.author.id:                                                      
                             try:                                                                              
                                 if(vclients[message.guild.id]):                                               
-                                    if(vclients[message.guild.id].is_playing() or vclients[message.guild.id].is_paused()):                                                                                                  
-                                        await message.channel.send("I'm already playing something.")          
+                                    if(vclients[message.guild.id].is_playing() or vclients[message.guild.id].is_paused()):
+                                        with open('queue-'+str(message.guild.id),'r+') as queue:
+                                            queue.write(filename+"\n")
+                                        await message.channel.send("Added to queue.")
                                     else:                                                                     
                                         await message.channel.send("Playing now...")                          
                                         vclients[message.guild.id].play(discord.FFmpegPCMAudio(filename))     
@@ -218,7 +243,9 @@ async def on_message(message):
                             try:
                                 if(vclients[message.guild.id]):
                                     if(vclients[message.guild.id].is_playing() or vclients[message.guild.id].is_paused()):
-                                        await message.channel.send("I'm already playing something.")
+                                        with open('queue-'+str(message.guild.id),'a+') as queue:
+                                            queue.write(filename+"\n")
+                                        await message.channel.send("Added to queue.")
                                     else:
                                         await message.channel.send("Playing now...")
                                         vclients[message.guild.id].play(discord.FFmpegPCMAudio(filename))
@@ -232,6 +259,13 @@ async def on_message(message):
             await message.channel.send("Invalid music link.")
             return
 
+    #if message.content == (prefix+'queue'):
+     #   try:
+      #      with open('queue-'+str(message.guild.id),'r') as queue:
+       #         await message.channel.send(queue.readlines());
+        #except:
+         #   await message.channel.send("The queue is empty. Please add a song while one is playing or paused to get a queue.")
+            
     if message.content == (prefix+'pause'):
         if(vclients[message.guild.id].is_paused()):
             await message.channel.send("I'm already paused.")
