@@ -153,8 +153,12 @@ async def on_message(message):
                     await message.channel.send("You must be in a VC.")
         
     if message.content == (prefix+'leave'):
-        if(not message.author.id == 408372847652634624):
-            return
+        admFlag=0
+        for role in message.author.roles:
+            if(role.permissions.priority_speaker):
+                admFlag=1
+        if(not admFlag==1):
+            await message.channel.send("You need `Priority Speaker` permissions to make me leave.")
         else:
             try:
                 if(vclients[message.guild.id]):
