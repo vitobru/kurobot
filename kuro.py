@@ -16,9 +16,9 @@ TOKEN=str(open("token","r").read())
 
 client = discord.Client()
 
-version = "0.3.2"
+version = "0.3.3"
 
-prefix = "%"
+prefix = "$"
 
 vclients = {}
 
@@ -287,9 +287,12 @@ async def on_message(message):
     if message.content == (prefix+'uptime'):
         tsecs=math.floor(time.time()-initTime)
         secs=tsecs%60
-        mins=tsecs//60 # 1 min = 60 secs
-        hrs=mins//60 # 1 hr = 60 mins
-        dys=hrs//24 # 1 dy = 24 hrs
+        tmins=tsecs//60 # 1 min = 60 secs
+        mins=tmins%60
+        thrs=tmins//60 # 1 hr = 60 mins
+        hrs=thrs%60
+        tdys=thrs//24 # 1 dy = 24 hrs
+        dys=tdys%24
         embed = discord.Embed(title="Uptime")
         embed.set_footer(text="KuroBot")
         embed.add_field(name="seconds", value=str(secs))
