@@ -18,7 +18,7 @@ client = discord.Client()
 
 version = "0.3.3"
 
-prefix = "$"
+prefix = "%"
 
 vclients = {}
 
@@ -65,6 +65,9 @@ async def on_message(message):
             pass
     else:
         pass
+
+    if message.content == (prefix+'invite'):
+        await message.channel.send("https://discord.com/api/oauth2/authorize?client_id=740065310727602236&permissions=36816897&scope=bot\n\n:heart:")
     
     if message.content.startswith(prefix+'disable'):
         todisable = " ".join(message.content.split(" ")[1:])
@@ -283,7 +286,7 @@ async def on_message(message):
         embed.set_footer(text="KuroBot")
         embed.add_field(name="millis", value=(timestr))
         await message.channel.send(embed=embed)
-        
+
     if message.content == (prefix+'uptime'):
         tsecs=math.floor(time.time()-initTime)
         secs=tsecs%60
@@ -308,7 +311,7 @@ async def on_message(message):
         embed.add_field(name="GitHub", value="https://github.com/vitobru/kurobot")
         await message.channel.send(embed=embed)
 
-    if message.content == (prefix+'fuckoff'):
+    if message.content == (prefix+'exit'):
         if(not message.author.id == 408372847652634624):
             return
         else:
