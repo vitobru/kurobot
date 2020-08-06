@@ -1,4 +1,4 @@
-import discord, pickledb, random, time, math, re, youtube_dl, os, glob, uuid
+import discord, pickledb, random, time, math, re, youtube_dl, os, glob, uuid, datetime
 
 initTime = time.time()
 
@@ -18,7 +18,7 @@ client = discord.Client()
 
 version = "0.3.2"
 
-prefix = "$"
+prefix = "%"
 
 vclients = {}
 
@@ -35,10 +35,8 @@ def setDB(database,key,val):
 class NoopLogger(object):
     def debug(self, msg):
         pass
-
     def warning(self, msg):
         pass
-
     def error(self, msg):
         pass
 
@@ -53,6 +51,9 @@ async def on_message(message):
     if message.author == client.user:
         return
 
+    if isinstance(message.channel, discord.DMChannel):
+        return
+    
     disabled = disabledCommands.get(str(message.guild.id))
     if disabled is not False:
         if message.content.replace(prefix,"") in disabled:
@@ -231,7 +232,42 @@ async def on_message(message):
             await message.channel.send("Stopping...")
         else:
             await message.channel.send("I'm not playing anything.")
-                
+
+    if message.content.startswith(prefix+'purge'):
+        admFlag=0
+        for role in message.author.roles:
+            if(role.permissions.manage_messages):
+                admFlag=1
+        if(admFlag==1):
+            try:
+                howmany = int(message.content.split(" ")[1])
+            except:
+                await message.channel.send("Invalid argument for how many messages to be deleted.")
+                return
+            # boilerplate makes me want to kill myself
+            deleted = await message.channel.purge(limit=howmany)
+            await message.channel.send('Deleted {} message(s).'.format(len(deleted)))
+        else:
+            await message.channel.send("You do not have the `Manage Messages` permission in any of your roles.")
+
+    if message.content.startswith(prefix+'whois'):
+        user_query = message.mentions[0]
+        embed = discord.Embed()
+        rolenames = []
+        for role in user_query.roles:
+            rolenames.append(role.name)
+        rolenames = rolenames[1:]
+        embed.set_thumbnail(url=user_query.avatar_url)
+        embed.set_author(name="Whois: "+user_query.name)
+        embed.set_footer(text="KuroBot")
+        embed.add_field(name="Full name:", value=user_query.name+"#"+user_query.discriminator, inline=True)
+        embed.add_field(name="Nickname:", value=user_query.nick, inline=True)
+        embed.add_field(name="Joined:", value=user_query.joined_at.strftime("%m/%d/%Y, at %I:%M:%S %p in the timezone of this server"), inline=True)
+        embed.add_field(name="ID", value=user_query.id, inline=True)
+        embed.add_field(name="Roles ["+str(len(user_query.roles[1:]))+"]", value=",".join(rolenames), inline=True)
+        embed.add_field(name="Created:", value=user_query.created_at.strftime("%m/%d/%Y, at %I:%M:%S %p UTC"), inline=True)
+        await message.channel.send(embed=embed)
+            
     if message.content == (prefix+'kuro'):
         file = discord.File("resources/kuro.png", filename="kuro.png")
         embed = discord.Embed(title="Kuro")
@@ -283,15 +319,16 @@ async def on_message(message):
         embed.add_field(name="about", value="will show an about dialog,\nshowing info about the bot.", inline=True)
         embed.add_field(name="google", value="lemme google that for ya. \nreturns a google URL for \nwhatever you typed in.", inline=True)
         embed.add_field(name="nsfw", value="[NSFW] multi-source nsfw command,\ndocs will be created soon.", inline=True)
+        embed.add_field(name="whois", value="mention a user and get\ninfo about them.",inline=True)
         embed.add_field(name="kuro", value="simply sends a kuro.", inline=True)
-        embed.add_field(name="uptime", value="returns the bot's uptime.",inline=True);
-        embed.add_field(name="latency", value="returns the bot's latency.",inline=True);
-        embed.add_field(name="leave", value="[OWNER ONLY] disconnects kuro from vc.", inline=True);
-        embed.add_field(name="join", value="has kuro join your channel.",inline=True);
-        embed.add_field(name="play", value="plays an uploaded mp3\nfile or youtube/soundcloud\netc. link", inline=True);
-        embed.add_field(name="pause", value="pauses music playback.",inline=True);
-        embed.add_field(name="resume", value="resumes music playback.",inline=True);
-        embed.add_field(name="stop", value="stops music playback.",inline=True);
+        embed.add_field(name="uptime", value="returns the bot's uptime.",inline=True)
+        embed.add_field(name="latency", value="returns the bot's latency.",inline=True)
+        embed.add_field(name="leave", value="[OWNER ONLY] disconnects kuro from vc.", inline=True)
+        embed.add_field(name="join", value="has kuro join your channel.",inline=True)
+        embed.add_field(name="play", value="plays an uploaded mp3\nfile or youtube/soundcloud\netc. link", inline=True)
+        embed.add_field(name="pause", value="pauses music playback.",inline=True)
+        embed.add_field(name="resume", value="resumes music playback.",inline=True)
+        embed.add_field(name="stop", value="stops music playback.",inline=True)
         embed.add_field(name="more to be added soon", value="please check back for\nmore commands!", inline=True)
 
         await message.channel.send(embed=embed)
