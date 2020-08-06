@@ -1,3 +1,4 @@
+#KuroBot v0.3.4
 import discord, pickledb, random, time, math, re, youtube_dl, os, glob, uuid, datetime
 
 initTime = time.time()
@@ -16,7 +17,7 @@ TOKEN=str(open("token","r").read())
 
 client = discord.Client()
 
-version = "0.3.3"
+version = "0.3.4"
 
 prefix = "$"
 
@@ -67,7 +68,11 @@ async def on_message(message):
         pass
 
     if message.content == (prefix+'invite'):
-        await message.channel.send("https://discord.com/api/oauth2/authorize?client_id=740065310727602236&permissions=36816897&scope=bot\n\n:heart:")
+        embed = discord.Embed(title="KuroBot v"+version, description="**Invite Kuro to your server!**\nUse this [invite](https://discord.com/api/oauth2/authorize?client_id=740065310727602236&permissions=36816897&scope=bot) to invite her~")
+        embed.set_thumbnail(url=client.user.avatar_url)
+        embed.set_footer(text="KuroBot")
+        embed.add_field(name="Thank you for considering using KuroBot!", value=":heart:")
+        await message.channel.send(embed=embed)
     
     if message.content.startswith(prefix+'disable'):
         admFlag=0
