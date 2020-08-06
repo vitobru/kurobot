@@ -1,4 +1,4 @@
-#KuroBot v0.3.4
+#KuroBot v0.3.5
 import discord, pickledb, random, time, math, re, youtube_dl, os, glob, uuid, datetime
 
 initTime = time.time()
@@ -17,7 +17,7 @@ TOKEN=str(open("token","r").read())
 
 client = discord.Client()
 
-version = "0.3.4"
+version = "0.3.5"
 
 prefix = "$"
 
@@ -66,6 +66,9 @@ async def on_message(message):
             pass
     else:
         pass
+
+    if message.content == (prefix+'prefix'):
+        await message.channel.send("The current set prefix is: `"+prefix+"`")
 
     if message.content == (prefix+'invite'):
         embed = discord.Embed(title="KuroBot v"+version, description="**Invite Kuro to your server!**\nUse this [invite](https://discord.com/api/oauth2/authorize?client_id=740065310727602236&permissions=36816897&scope=bot) to invite her~")
@@ -339,20 +342,22 @@ async def on_message(message):
         embed = discord.Embed()
         embed.set_footer(text="KuroBot")
         embed.add_field(name="about", value="will show an about dialog,\nshowing info about the bot.", inline=True)
-        embed.add_field(name="disable", value="[ADMIN ONLY] disables commands,\nseparate multiples with spaces.",inline=True)
+        embed.add_field(name="disable", value="[ADMIN ONLY] disables commands,\nseparate multiples with spaces.", inline=True)
         embed.add_field(name="google", value="lemme google that for ya. \nreturns a google URL for \nwhatever you typed in.", inline=True)
+        embed.add_field(name="exit", value="[OWNER ONLY] shuts-down KuroBot.", inline=True)
         embed.add_field(name="nsfw", value="[NSFW] multi-source nsfw command,\ndocs will be created soon.", inline=True)
-        embed.add_field(name="whois", value="mention a user and get\ninfo about them.",inline=True)
+        embed.add_field(name="whois", value="mention a user and get\ninfo about them.", inline=True)
         embed.add_field(name="kuro", value="simply sends a kuro.", inline=True)
-        embed.add_field(name="uptime", value="returns the bot's uptime.",inline=True)
-        embed.add_field(name="latency", value="returns the bot's latency.",inline=True)
-        embed.add_field(name="leave", value="[OWNER ONLY] disconnects kuro from vc.", inline=True)
-        embed.add_field(name="join", value="has kuro join your channel.",inline=True)
+        embed.add_field(name="uptime", value="returns the bot's uptime.", inline=True)
+        embed.add_field(name="latency", value="returns the bot's latency.", inline=True)
+        embed.add_field(name="leave", value="[ADMIN ONLY] disconnects kuro from vc.", inline=True)
+        embed.add_field(name="join", value="has kuro join your channel.", inline=True)
         embed.add_field(name="play", value="plays an uploaded mp3\nfile or youtube/soundcloud\netc. link", inline=True)
         embed.add_field(name="purge", value="[ADMIN ONLY] purges up to 100 messages\nfrom a channel.", inline=True)
-        embed.add_field(name="pause", value="pauses music playback.",inline=True)
-        embed.add_field(name="resume", value="resumes music playback.",inline=True)
-        embed.add_field(name="stop", value="stops music playback.",inline=True)
+        embed.add_field(name="prefix", value="lists kuro's currently set prefix", inline=True)
+        embed.add_field(name="pause", value="pauses music playback.", inline=True)
+        embed.add_field(name="resume", value="resumes music playback.", inline=True)
+        embed.add_field(name="stop", value="stops music playback.", inline=True)
         embed.add_field(name="more to be added soon", value="please check back for\nmore commands!", inline=True)
 
         await message.channel.send(embed=embed)
