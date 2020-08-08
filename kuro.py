@@ -1,17 +1,11 @@
 #KuroBot v0.3.5
-import discord, pickledb, random, time, math, re, youtube_dl, os, glob, uuid, datetime, asyncio
+import discord, pickledb, random, time, math, re, youtube_dl, os, uuid, datetime, redis, json
 from discord.ext import tasks
 
 initTime = time.time()
 
 print("Clearing temp files...")
-files = glob.glob('./*.mp3')
-files2 = glob.glob('./queue-*')
-for file in zip(files,files2):
-    try:
-        os.remove(file)
-    except:
-        print("Error while deleting ",file)
+os.system("rm -f *.mp3 queue-*")
 
 # put your token into the "token" file.
 
@@ -21,12 +15,13 @@ client = discord.Client()
 
 version = "0.4.1-indev"
 
-prefix = "$"
+prefix = "%"
 
 vclients = {}
 
 disabledCommands=pickledb.load('disabledCommands.db',False)
 prefixes=pickledb.load('prefixes.db',False)
+queues=redis.Redis(host='localhost',port=6379,db=0)
 
 def setDB(database,key,val):
     if(database.set(key,val)):
@@ -49,16 +44,17 @@ print('Kuro Bot v'+version+' - by Vitobru and armeabi')
 async def ensure_queue_loop():
     try:
         for vc in vclients.values():
-            if not vc.is_playing() or not vc.is_paused():
+            if vc.is_playing() or vc.is_paused():
+                return
+            else:
                 next_song=""
+                queue=[]
                 try:
-                    with open('queue-'+vc.guild.id,'r') as queue:
-                        next_song=queue.readline()
-                    with open('queue-'+vc.guild.id,'r') as queuein:
-                        data_to_write=queuein.read().splitlines(True)
-                    with open('queue-'+vc.guild.id,'w') as queueout:
-                        queueout.writelines(data_to_write[1:])
-                    vc.play(discord.FFmpegPCMAudio(filename))
+                    queue = json.loads(queues.get(vc.guild.id))
+                    next_song = queue[0]
+                    queue = queue[1:]
+                    queues.set(vc.guild.id,json.dumps(queue))
+                    vc.play(discord.FFmpegPCMAudio(next_song))
                 except:
                     pass
     except:
@@ -90,6 +86,10 @@ async def on_message(message):
     else:
         pass
 
+    if message.content == (prefix+'queue'):
+        queue = queues.get(message.guild.id)
+        await message.channel.send(queue)
+    
     if message.content == (prefix+'prefix'):
         await message.channel.send("The current set prefix is: `"+prefix+"`")
 
@@ -223,12 +223,17 @@ async def on_message(message):
                             try:                                                                              
                                 if(vclients[message.guild.id]):                                               
                                     if(vclients[message.guild.id].is_playing() or vclients[message.guild.id].is_paused()):
-                                        with open('queue-'+str(message.guild.id),'r+') as queue:
-                                            queue.write(filename+"\n")
+                                        queue = []
+                                        try:
+                                            queue = json.loads(queues.get(message.guild.id))
+                                        except:
+                                            queue = [filename]
+                                        if(isinstance(queue, bytes)):
+                                            queue = [filename]
+                                        else:
+                                            queue.append(filename)
+                                        queues.set(message.guild.id,json.dumps(queue))
                                         await message.channel.send("Added to queue.")
-                                    else:                                                                     
-                                        await message.channel.send("Playing now...")                          
-                                        vclients[message.guild.id].play(discord.FFmpegPCMAudio(filename))     
                             except:                                                                           
                                 vclients[message.guild.id] = await vc.connect()                               
                                 await message.channel.send("Playing now...")                                  
@@ -243,8 +248,16 @@ async def on_message(message):
                             try:
                                 if(vclients[message.guild.id]):
                                     if(vclients[message.guild.id].is_playing() or vclients[message.guild.id].is_paused()):
-                                        with open('queue-'+str(message.guild.id),'a+') as queue:
-                                            queue.write(filename+"\n")
+                                        queue = []
+                                        try:
+                                            queue = json.loads(queues.get(message.guild.id))
+                                        except:
+                                            queue = [filename]
+                                        if(isinstance(queue, bytes)):
+                                            queue = [filename]
+                                        else:
+                                            queue.append(filename)
+                                        queues.set(message.guild.id,json.dumps(queue))
                                         await message.channel.send("Added to queue.")
                                     else:
                                         await message.channel.send("Playing now...")
@@ -341,20 +354,18 @@ async def on_message(message):
         await message.channel.send(embed=embed)
 
     if message.content == (prefix+'uptime'):
-        tsecs=math.floor(time.time()-initTime)
-        secs=tsecs%60
-        tmins=tsecs//60 # 1 min = 60 secs
-        mins=tmins%60
-        thrs=tmins//60 # 1 hr = 60 mins
-        hrs=thrs%60
-        tdys=thrs//24 # 1 dy = 24 hrs
-        dys=tdys%24
+        # implementing part of the GNU coreutils uptime
+        uptime=math.floor(time.time()-initTime)
+        upsecs=uptime%60
+        updays=uptime//86400
+        uphours=(uptime-(updays*86400))//3600
+        upmins=(uptime-(updays*86400)-(uphours*3600))//60
         embed = discord.Embed(title="Uptime")
         embed.set_footer(text="KuroBot")
-        embed.add_field(name="seconds", value=str(secs))
-        embed.add_field(name="minutes", value=str(mins))
-        embed.add_field(name="hours", value=str(hrs))
-        embed.add_field(name="days", value=str(dys))
+        embed.add_field(name="seconds", value=str(upsecs))
+        embed.add_field(name="minutes", value=str(upmins))
+        embed.add_field(name="hours", value=str(uphours))
+        embed.add_field(name="days", value=str(updays))
         await message.channel.send(embed=embed)
     
     if message.content == (prefix+'about'):
