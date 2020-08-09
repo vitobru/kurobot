@@ -1,4 +1,4 @@
-# Kuro Bot v.0.3.5
+# Kuro Bot v.0.4.1-indev
 
 ###### A Discord bot created by Vitobru and Alatar
 
