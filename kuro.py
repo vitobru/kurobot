@@ -1,11 +1,11 @@
-#KuroBot v0.3.5
+#KuroBot v0.4.1-indev
 import discord, pickledb, random, time, math, re, youtube_dl, os, uuid, datetime, redis, json
 from discord.ext import tasks
 
 initTime = time.time()
 
 print("Clearing temp files...")
-os.system("rm -f *.mp3 queue-*")
+os.system("rm -f resources/*.mp3 queue-*")
 
 # put your token into the "token" file.
 
@@ -15,7 +15,7 @@ client = discord.Client()
 
 version = "0.4.1-indev"
 
-prefix = "%"
+prefix = "$"
 
 vclients = {}
 
@@ -61,11 +61,11 @@ async def ensure_queue_loop():
         pass
 
 ensure_queue_loop.start()
-    
+
 @client.event
 async def on_ready():
     print('Logged in as {0.user}'.format(client))
-
+    
 @client.event
 async def on_message(message):
     if message.author == client.user:
@@ -89,7 +89,7 @@ async def on_message(message):
     if message.content == (prefix+'queue'):
         queue = queues.get(message.guild.id)
         await message.channel.send(queue)
-    
+
     if message.content == (prefix+'prefix'):
         await message.channel.send("The current set prefix is: `"+prefix+"`")
 
@@ -211,12 +211,12 @@ async def on_message(message):
                     'preferredcodec': 'mp3',
                     'preferredquality': '192',
                 }],
-                'outtmpl': filename+".tmp",
+                'outtmpl': "resources/"+filename+".tmp",
                 'logger': NoopLogger()
             }
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([linkstr])
-                filename = filename+".mp3"
+                filename = "resources/"+filename+".mp3"
                 for vc in message.guild.voice_channels:                                                       
                     for memb in vc.members:                                                                   
                         if memb.id == message.author.id:                                                      
@@ -234,13 +234,16 @@ async def on_message(message):
                                             queue.append(filename)
                                         queues.set(message.guild.id,json.dumps(queue))
                                         await message.channel.send("Added to queue.")
-                            except:                                                                           
+                                    else:
+                                        await message.channel.send("Playing now...")
+                                        vclients[message.guild.id].play(discord.FFmpegPCMAudio(filename))
+                            except:
                                 vclients[message.guild.id] = await vc.connect()                               
                                 await message.channel.send("Playing now...")                                  
                                 vclients[message.guild.id].play(discord.FFmpegPCMAudio(filename))
         elif(len(message.attachments)>0):
             if("mp3" in message.attachments[0].url):
-                filename = str(uuid.uuid4())+".mp3"
+                filename = "resources/"+str(uuid.uuid4())+".mp3"
                 await message.attachments[0].save(filename)
                 for vc in message.guild.voice_channels:
                     for memb in vc.members:
@@ -278,7 +281,7 @@ async def on_message(message):
        #         await message.channel.send(queue.readlines());
         #except:
          #   await message.channel.send("The queue is empty. Please add a song while one is playing or paused to get a queue.")
-            
+
     if message.content == (prefix+'pause'):
         if(vclients[message.guild.id].is_paused()):
             await message.channel.send("I'm already paused.")
@@ -362,15 +365,15 @@ async def on_message(message):
         upmins=(uptime-(updays*86400)-(uphours*3600))//60
         embed = discord.Embed(title="Uptime")
         embed.set_footer(text="KuroBot")
-        embed.add_field(name="seconds", value=str(upsecs))
-        embed.add_field(name="minutes", value=str(upmins))
-        embed.add_field(name="hours", value=str(uphours))
         embed.add_field(name="days", value=str(updays))
+        embed.add_field(name="hours", value=str(uphours))
+        embed.add_field(name="minutes", value=str(upmins))
+        embed.add_field(name="seconds", value=str(upsecs))
         await message.channel.send(embed=embed)
     
     if message.content == (prefix+'about'):
         embed = discord.Embed(title="KuroBot v"+version, description="A bot written in discord.py by\nvito#1072 and armeabi#3621.")
-        embed.set_thumbnail(url="https://media.discordapp.net/attachments/740369729188921345/740404293718245376/smug-upscale.png?width=529&height=482")
+        embed.set_thumbnail(url=client.user.avatar_url)
         embed.set_footer(text="KuroBot")
         embed.add_field(name="GitHub", value="https://github.com/vitobru/kurobot")
         await message.channel.send(embed=embed)
