@@ -1,4 +1,4 @@
-#KuroBot v0.4.1-indev
+#KuroBot v0.4.3-indev
 import discord, pickledb, random, time, math, re, youtube_dl, os, uuid, datetime, redis, json
 from discord.ext import tasks
 
@@ -13,7 +13,7 @@ TOKEN=str(open("token","r").read())
 
 client = discord.Client()
 
-version = "0.4.1-indev"
+version = "0.4.3-indev"
 
 prefix = "$"
 
@@ -65,7 +65,7 @@ ensure_queue_loop.start()
 @client.event
 async def on_ready():
     print('Logged in as {0.user}'.format(client))
-    
+
 @client.event
 async def on_message(message):
     if message.author == client.user:
@@ -73,7 +73,7 @@ async def on_message(message):
 
     if isinstance(message.channel, discord.DMChannel):
         return
-    
+
     disabled = disabledCommands.get(str(message.guild.id))
     if disabled is not False:
         if message.content.replace(prefix,"") in disabled:
@@ -99,7 +99,7 @@ async def on_message(message):
         embed.set_footer(text="KuroBot")
         embed.add_field(name="Thank you for considering using KuroBot!", value=":heart:")
         await message.channel.send(embed=embed)
-    
+
     if message.content.startswith(prefix+'disable'):
         admFlag=0
         for role in message.author.roles:
@@ -118,11 +118,11 @@ async def on_message(message):
             return
         args = message.content.split(" ")[1:]
         if args[0]=="kiss":
-            kuro_kiss = [                                                                                     
+            kuro_kiss = [
                 'https://cdn.discordapp.com/attachments/734623501788512258/739787730476859502/kuro-illya-makeout.gif',
                 'https://img2.gelbooru.com/images/6a/9e/6a9e51ca1241bc59a9a556e946078cb0.gif',
-                'https://i.pinimg.com/originals/f3/e8/e4/f3e8e48b571ea57d0e013fa508346b7b.gif',       
-                'https://pa1.narvii.com/6202/814df9da373b94a18c76e1e7b4283a8e619f801f_hq.gif',       
+                'https://i.pinimg.com/originals/f3/e8/e4/f3e8e48b571ea57d0e013fa508346b7b.gif',
+                'https://pa1.narvii.com/6202/814df9da373b94a18c76e1e7b4283a8e619f801f_hq.gif',
                 'https://img2.gelbooru.com/images/6d/71/6d7117d93a9d99d60a97edc5595b240d.gif']
             response = random.choice(kuro_kiss)
             await message.channel.send(response)
@@ -168,7 +168,7 @@ async def on_message(message):
             return
         else:
             await message.channel.send("Invalid source.")
-            
+
     if message.content == (prefix+'join'):
         for vc in message.guild.voice_channels:
             for memb in vc.members:
@@ -177,22 +177,25 @@ async def on_message(message):
                         vclients[message.guild.id] = await vc.connect()
                 except:
                     await message.channel.send("You must be in a VC.")
-        
-    if message.content == (prefix+'leave'):
+
+    if message.content == (prefix+'stop'):
         admFlag=0
         for role in message.author.roles:
             if(role.permissions.priority_speaker):
                 admFlag=1
         if(not admFlag==1):
-            await message.channel.send("You need `Priority Speaker` permissions to make me leave.")
+            await message.channel.send("You need `Priority Speaker` permissions to make me stop.")
         else:
             try:
                 if(vclients[message.guild.id]):
                     await vclients[message.guild.id].disconnect()
-                    await message.channel.send("Leaving...")
+                    await message.channel.send("Stopping...")
             except:
                 await message.channel.send("I'm not in a VC.")
-    
+
+    if message.content == (prefix+'fuck'):
+        await message.channel.send("capitalism")
+
     if message.content.startswith(prefix+'play'):
         linkstr = "".join(message.content.split(" ")[1:])
         validator = re.compile(
@@ -203,6 +206,12 @@ async def on_message(message):
         r'(?::\d+)?' # optional port
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
         if(re.match(validator, linkstr)is not None):
+            if "list" in linkstr:
+                await message.channel.send("Playlist functionality is not supported in this bot. Sorry!")
+                return
+            if "playlist" in linkstr:
+                await message.channel.send("Playlist functionality is not supported in this bot. Sorry!")
+                return
             filename = str(uuid.uuid4())
             ydl_opts = {
                 'format': 'bestaudio/best',
@@ -217,11 +226,11 @@ async def on_message(message):
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([linkstr])
                 filename = "resources/"+filename+".mp3"
-                for vc in message.guild.voice_channels:                                                       
-                    for memb in vc.members:                                                                   
-                        if memb.id == message.author.id:                                                      
-                            try:                                                                              
-                                if(vclients[message.guild.id]):                                               
+                for vc in message.guild.voice_channels:
+                    for memb in vc.members:
+                        if memb.id == message.author.id:
+                            try:
+                                if(vclients[message.guild.id]):
                                     if(vclients[message.guild.id].is_playing() or vclients[message.guild.id].is_paused()):
                                         queue = []
                                         try:
@@ -238,8 +247,8 @@ async def on_message(message):
                                         await message.channel.send("Playing now...")
                                         vclients[message.guild.id].play(discord.FFmpegPCMAudio(filename))
                             except:
-                                vclients[message.guild.id] = await vc.connect()                               
-                                await message.channel.send("Playing now...")                                  
+                                vclients[message.guild.id] = await vc.connect()
+                                await message.channel.send("Playing now...")
                                 vclients[message.guild.id].play(discord.FFmpegPCMAudio(filename))
         elif(len(message.attachments)>0):
             if("mp3" in message.attachments[0].url):
@@ -275,13 +284,6 @@ async def on_message(message):
             await message.channel.send("Invalid music link.")
             return
 
-    #if message.content == (prefix+'queue'):
-     #   try:
-      #      with open('queue-'+str(message.guild.id),'r') as queue:
-       #         await message.channel.send(queue.readlines());
-        #except:
-         #   await message.channel.send("The queue is empty. Please add a song while one is playing or paused to get a queue.")
-
     if message.content == (prefix+'pause'):
         if(vclients[message.guild.id].is_paused()):
             await message.channel.send("I'm already paused.")
@@ -298,10 +300,10 @@ async def on_message(message):
             vclients[message.guild.id].resume()
             await message.channel.send("Resuming...")
 
-    if message.content == (prefix+'stop'):
+    if message.content == (prefix+'skip'):
         if(vclients[message.guild.id]):
             vclients[message.guild.id].stop()
-            await message.channel.send("Stopping...")
+            await message.channel.send("Skipping...")
         else:
             await message.channel.send("I'm not playing anything.")
 
@@ -339,14 +341,14 @@ async def on_message(message):
         embed.add_field(name="Roles ["+str(len(user_query.roles[1:]))+"]", value=",".join(rolenames), inline=True)
         embed.add_field(name="Created:", value=user_query.created_at.strftime("%m/%d/%Y, at %I:%M:%S %p UTC"), inline=True)
         await message.channel.send(embed=embed)
-            
+
     if message.content == (prefix+'kuro'):
         file = discord.File("resources/kuro.png", filename="kuro.png")
         embed = discord.Embed(title="Kuro")
         embed.set_image(url="attachment://kuro.png")
         embed.set_footer(text="KuroBot")
         await message.channel.send(file=file, embed=embed)
-        
+
     if message.content == (prefix+'latency'):
         timestr = str(round(client.latency,3))
         timestr = timestr.replace(".","")
@@ -370,13 +372,27 @@ async def on_message(message):
         embed.add_field(name="minutes", value=str(upmins))
         embed.add_field(name="seconds", value=str(upsecs))
         await message.channel.send(embed=embed)
-    
+
     if message.content == (prefix+'about'):
         embed = discord.Embed(title="KuroBot v"+version, description="A bot written in discord.py by\nvito#1072 and armeabi#3621.")
         embed.set_thumbnail(url=client.user.avatar_url)
         embed.set_footer(text="KuroBot")
-        embed.add_field(name="GitHub", value="https://github.com/vitobru/kurobot")
+        embed.add_field(name="GitLab", value="https://gitlab.com/vitobru/kurobot")
         await message.channel.send(embed=embed)
+    
+    if message.content == (prefix+'alpha-warning'):
+        embed = discord.Embed(title="This is only an alpha release!", description="Kuro is currently only in her alpha release stage,\nmeaning that she's not perfect.\nPlease submit any complaints to:\narmeabi#3621 or vito#1072")
+        embed.set_thumbnail(url=client.user.avatar_url)
+        embed.set_footer(text="KuroBot")
+        await message.channel.send(embed=embed)
+
+    if message.content.startswith(prefix+'test'):
+        test = message.content.split(" ")[1:]
+        if(message.author.id not in (408372847652634624,437748282731659271)):
+            return
+        else:
+            test = " ".join(test)
+            await message.channel.send(test)
 
     if message.content == (prefix+'exit'):
         if(not message.author.id == 408372847652634624):
@@ -385,7 +401,7 @@ async def on_message(message):
             await message.channel.send("Okay, master...")
             await client.logout()
             quit()
-    
+
     if message.content == (prefix+'help'):
         embed = discord.Embed()
         embed.set_footer(text="KuroBot")
@@ -393,23 +409,24 @@ async def on_message(message):
         embed.add_field(name="disable", value="[ADMIN ONLY] disables commands,\nseparate multiples with spaces.", inline=True)
         embed.add_field(name="google", value="lemme google that for ya. \nreturns a google URL for \nwhatever you typed in.", inline=True)
         embed.add_field(name="exit", value="[OWNER ONLY] shuts-down KuroBot.", inline=True)
+        embed.add_field(name="alpha-warning", value="displays message relating\nto alpha release.")
         embed.add_field(name="nsfw", value="[NSFW] multi-source nsfw command,\ndocs will be created soon.", inline=True)
         embed.add_field(name="whois", value="mention a user and get\ninfo about them.", inline=True)
         embed.add_field(name="kuro", value="simply sends a kuro.", inline=True)
         embed.add_field(name="uptime", value="returns the bot's uptime.", inline=True)
         embed.add_field(name="latency", value="returns the bot's latency.", inline=True)
-        embed.add_field(name="leave", value="[ADMIN ONLY] disconnects kuro from vc.", inline=True)
+        embed.add_field(name="stop", value="[ADMIN ONLY] disconnects kuro from vc.", inline=True)
         embed.add_field(name="join", value="has kuro join your channel.", inline=True)
         embed.add_field(name="play", value="plays an uploaded mp3\nfile or youtube/soundcloud\netc. link", inline=True)
         embed.add_field(name="purge", value="[ADMIN ONLY] purges up to 100 messages\nfrom a channel.", inline=True)
         embed.add_field(name="prefix", value="lists kuro's currently set prefix", inline=True)
         embed.add_field(name="pause", value="pauses music playback.", inline=True)
         embed.add_field(name="resume", value="resumes music playback.", inline=True)
-        embed.add_field(name="stop", value="stops music playback.", inline=True)
+        embed.add_field(name="skip", value="skips current song.", inline=True)
         embed.add_field(name="more to be added soon", value="please check back for\nmore commands!", inline=True)
 
         await message.channel.send(embed=embed)
-        
+
     if message.content.startswith(prefix+'google'):
         query = "+".join(message.content.split(" ")[1:])
         embed = discord.Embed(description="https://www.google.com/search?hl=en_US&q="+query)
