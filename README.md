@@ -1,4 +1,4 @@
-# Kuro Bot v.0.4.1-indev
+# Kuro Bot v.0.4.3-indev
 
 ###### A Discord bot created by Vitobru and Alatar
 
@@ -24,10 +24,8 @@ Please note that Windows is not supported, you will need to fix the issues yours
 
 **Team:**
 
-Lead Programmers - Vitobru, armeabiv7
-
-Support & QA - alatartheblue42
+Lead Programmers - vito and alatartheblue42
 
 
 
-**Contact:** [BElISLEMusic@outlook.com](BElISLEMusic@outlook.com) if you wanna email me about the progress. Otherwise, just tweet me [@vitobrutweet](https://twitter.com/vitobrutweet/).
+**Contact:** [BElISLEMusic@outlook.com](mailto:BElISLEMusic@outlook.com) if you wanna email me about the progress. Otherwise, just tweet me [@vitobrutweet](https://twitter.com/vitobrutweet/).
