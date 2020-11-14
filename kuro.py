@@ -377,7 +377,7 @@ async def on_message(message):
         embed = discord.Embed(title="KuroBot v"+version, description="A bot written in discord.py by\nvito#1072 and armeabi#3621.")
         embed.set_thumbnail(url=client.user.avatar_url)
         embed.set_footer(text="KuroBot")
-        embed.add_field(name="GitLab", value="https://gitlab.com/vitobru/kurobot")
+        embed.add_field(name="GitHub", value="https://github.com/vitobru/kurobot")
         await message.channel.send(embed=embed)
     
     if message.content == (prefix+'alpha-warning'):
