@@ -38,7 +38,7 @@ class NoopLogger(object):
     def error(self, msg):
         pass
 
-print('Kuro Bot v'+version+' - by Vitobru and armeabi')
+print('Kuro Bot v'+version+' - by vitobru and alatartheblue')
 
 @tasks.loop(seconds=5.0)
 async def ensure_queue_loop():
