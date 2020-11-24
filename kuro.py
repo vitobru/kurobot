@@ -375,21 +375,21 @@ async def on_message(message):
         await message.channel.send(embed=embed)
 
     if message.content == (prefix+'about'):
-        embed = discord.Embed(title="KuroBot v"+version, description="A bot written in discord.py by\nvito#1072 and armeabi#3621.")
+        embed = discord.Embed(title="KuroBot v"+version, description="A bot written in discord.py by\nvito#1072 and\nalatartheblue#1891.")
         embed.set_thumbnail(url=client.user.avatar_url)
         embed.set_footer(text="KuroBot")
         embed.add_field(name="GitHub", value="https://github.com/vitobru/kurobot")
         await message.channel.send(embed=embed)
     
     if message.content == (prefix+'alpha-warning'):
-        embed = discord.Embed(title="This is only an alpha release!", description="Kuro is currently only in her alpha release stage,\nmeaning that she's not perfect.\nPlease submit any complaints to:\narmeabi#3621 or vito#1072")
+        embed = discord.Embed(title="This is only an alpha release!", description="Kuro is currently only in her alpha release stage,\nmeaning that she's not perfect.\nPlease submit any complaints to:\nalatartheblue#1891 or vito#1072")
         embed.set_thumbnail(url=client.user.avatar_url)
         embed.set_footer(text="KuroBot")
         await message.channel.send(embed=embed)
 
     if message.content.startswith(prefix+'test'):
         test = message.content.split(" ")[1:]
-        if(message.author.id not in (408372847652634624,437748282731659271)):
+        if(message.author.id not in (408372847652634624,261232036625252352)):
             return
         else:
             test = " ".join(test)
