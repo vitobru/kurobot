@@ -1,4 +1,4 @@
-#KuroBot v0.4.3-indev
+#KuroBot v0.4.4-indev
 import discord, pickledb, random, time, math, re, youtube_dl, os, uuid, datetime, redis, json
 from discord.ext import tasks
 
@@ -13,7 +13,7 @@ TOKEN=str(open("token","r").read())
 
 client = discord.Client()
 
-version = "0.4.3-indev"
+version = "0.4.4-indev"
 
 prefix = "$"
 
@@ -330,7 +330,8 @@ async def on_message(message):
         rolenames = []
         for role in user_query.roles:
             rolenames.append(role.name)
-        rolenames = rolenames[1:]
+        if len(rolenames) != 1:
+            rolenames = rolenames[1:]
         embed.set_thumbnail(url=user_query.avatar_url)
         embed.set_author(name="Whois: "+user_query.name)
         embed.set_footer(text="KuroBot")
@@ -338,7 +339,7 @@ async def on_message(message):
         embed.add_field(name="Nickname:", value=user_query.nick, inline=True)
         embed.add_field(name="Joined:", value=user_query.joined_at.strftime("%m/%d/%Y, at %I:%M:%S %p in the timezone of this server"), inline=True)
         embed.add_field(name="ID", value=user_query.id, inline=True)
-        embed.add_field(name="Roles ["+str(len(user_query.roles[1:]))+"]", value=",".join(rolenames), inline=True)
+        embed.add_field(name="Roles ["+str(len(rolenames))+"]", value=",".join(rolenames), inline=True)
         embed.add_field(name="Created:", value=user_query.created_at.strftime("%m/%d/%Y, at %I:%M:%S %p UTC"), inline=True)
         await message.channel.send(embed=embed)
 
