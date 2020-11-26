@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # Kuro Bot v.0.6.1-indev
+=======
+# Kuro Bot v.0.4.4-indev
+>>>>>>> 093c283589cc53920398a1f5d67ba347e038cd35
 
 ###### A Discord bot created by Vitobru and Alatar
 
