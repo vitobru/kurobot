@@ -265,6 +265,7 @@ async def rule34(ctx):
 @bot.command(name='join', help='has kuro join the voice channel you are in.')
 @is_disabled()
 async def join(ctx):
+    await ctx.send("If I do not connect to the channel, leave and rejoin the voice channel to mitigate this issue. Thank you! :heart:")
     for vc in ctx.guild.voice_channels:
         for memb in vc.members:
             if memb.id == ctx.author.id:
