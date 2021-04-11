@@ -1,4 +1,4 @@
-#KuroBot v0.6.1-indev
+#KuroBot v0.6.3-indev
 import discord, random, time, math, re, youtube_dl, os, uuid, datetime, redis, json, aiosqlite
 from aiosqlite import Error
 from discord.ext import tasks, commands
@@ -12,9 +12,9 @@ initTime = time.time()
 
 TOKEN=str(open("token","r").read())
 
-bot = commands.Bot(command_prefix='%')
+bot = commands.Bot(command_prefix='$')
 
-version = "0.6.1-indev"
+version = "0.6.3-indev"
 
 vclients = {}
 
@@ -88,6 +88,8 @@ async def clear_mp3():
         print("Clearing temp files...")
         os.system("rm -f resources/*.mp3")
         os.system("rm -f *.rdb")
+        os.system("del /q resources\*.mp3")
+        os.system("del /q resources\*.tmp")
     except:
         print("No files were found to clear.")
 clear_mp3.start()
@@ -117,7 +119,7 @@ async def queue_error(ctx, error):
 @bot.command(name='disable', help='hopefully disables the specified command.')
 @commands.has_guild_permissions(manage_guild=True)
 async def disable(ctx, arg):
-    await createtable()
+    await createtable() #makes sure that the table is created, and ensures its creation if not
     db = await aiosqlite.connect(r'resources/disabled.db')
     try:
         arg = str(arg)
@@ -127,7 +129,7 @@ async def disable(ctx, arg):
         await db.commit()
         await db.close()
         await ctx.send("Success.")
-    except:
+    except: #remnant error handling from when i was trying to troubleshoot this goddamn system -lillie
         insert = """INSERT INTO disabled
         VALUES ("""+str(ctx.guild.id)+""", '"""+arg+"""');"""
         await ctx.send("Couldn't perform operation.")
@@ -138,6 +140,7 @@ async def disable(ctx, arg):
 async def disable_error(ctx, error):
     if isinstance(error, commands.CheckFailure):
         await ctx.send("You must have Manage Server permissions enabled. Sorry.")
+#yes, error handling would technically be overwritten by this, but since the database works, i don't fucking care :)
 
 @bot.command(name='enable', help='hopefully re-enables the specified command.')
 @commands.has_guild_permissions(manage_guild=True)
@@ -465,20 +468,27 @@ async def purge_error(ctx, error):
 async def whois(ctx, member: discord.Member):
     embed = discord.Embed()
     rolenames = []
-    for role in member.roles:
-        rolenames.append(role.name)
-    if len(rolenames) != 1:
-        rolenames = rolenames[1:]
-    embed.set_thumbnail(url=member.avatar_url)
-    embed.set_author(name="Whois: "+member.name)
-    embed.set_footer(text="KuroBot")
-    embed.add_field(name="Full name:", value=member.name+"#"+member.discriminator, inline=True)
-    embed.add_field(name="Nickname:", value=member.nick, inline=True)
-    embed.add_field(name="Joined:", value=member.joined_at.strftime("%m/%d/%Y, at %I:%M:%S %p in the timezone of this server"), inline=True)
-    embed.add_field(name="ID", value=member.id, inline=True)
-    embed.add_field(name="Roles ["+str(len(rolenames))+"]", value=",".join(rolenames), inline=True)
-    embed.add_field(name="Created:", value=member.created_at.strftime("%m/%d/%Y, at %I:%M:%S %p UTC"), inline=True)
-    await ctx.send(embed=embed)
+    if member.id != 261232036625252352:
+        for role in member.roles:
+            rolenames.append(role.name)
+        if len(rolenames) != 1:
+            rolenames = rolenames[1:]
+        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_author(name="Whois: "+member.name)
+        embed.set_footer(text="KuroBot")
+        embed.add_field(name="Full name:", value=member.name+"#"+member.discriminator, inline=True)
+        embed.add_field(name="Nickname:", value=member.nick, inline=True)
+        embed.add_field(name="Joined:", value=member.joined_at.strftime("%m/%d/%Y, at %I:%M:%S %p in the timezone of this server"), inline=True)
+        embed.add_field(name="ID", value=member.id, inline=True)
+        embed.add_field(name="Roles ["+str(len(rolenames))+"]", value=",".join(rolenames), inline=True)
+        embed.add_field(name="Created:", value=member.created_at.strftime("%m/%d/%Y, at %I:%M:%S %p UTC"), inline=True)
+        await ctx.send(embed=embed)
+    else:
+        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_author(name="Whois: "+member.name)
+        embed.set_footer(text="KuroBot")
+        embed.add_field(name="Huh?", value="I don't really know who this guy is. They don't actually do any work.")
+        await ctx.send(embed=embed)
 
 @whois.error
 async def whois_error(ctx, error):
@@ -543,6 +553,7 @@ async def about(ctx):
     embed = discord.Embed(title="KuroBot v"+version, description="A bot written in discord.py by\nvito#1072 and\nalatartheblue42#1891.")
     embed.set_thumbnail(url=bot.user.avatar_url)
     embed.set_footer(text="KuroBot")
+    embed.add_field(name="Website", value="http://sgecrest.ddns.net")
     embed.add_field(name="GitHub", value="https://github.com/vitobru/kurobot")
     await ctx.send(embed=embed)
 
