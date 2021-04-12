@@ -1,20 +1,20 @@
-#KuroBot v0.6.4-indev
+#KuroBot v0.7.0-indev
 import discord, random, time, math, re, youtube_dl, os, uuid, datetime, redis, json, aiosqlite, sys
 from aiosqlite import Error
 from discord.ext import tasks, commands
 from typing import Optional
+
+import utils.help
+import config.config as config
+
 intents = discord.Intents.default()
 intents.members = True
 
 initTime = time.time()
 
-#Put your token into the "token" file.
+bot = commands.Bot(command_prefix='$', help_command=utils.help.HelpCommand())
 
-TOKEN=str(open("token","r").read())
-
-bot = commands.Bot(command_prefix='$')
-
-version = "0.6.4-indev"
+version = "0.7.0-indev"
 
 vclients = {}
 
@@ -207,7 +207,7 @@ async def invite_error(ctx, error):
     if isinstance(error, Disabled):
         await ctx.send(error)
 
-@bot.group(name='nsfw')
+@bot.group(name='nsfw', help='contains NSFW commands.')
 @commands.is_nsfw()
 @is_disabled()
 async def nsfw(ctx):
@@ -454,7 +454,6 @@ async def purge(ctx, arg):
     except:
         await ctx.send("Invalid argument for how many messages to be deleted.")
         return
-    #boilerplate makes me want to kill myself
     if howmany == 0:
         ctx.send("I can't delete no messages.")
     elif howmany > 100:
@@ -582,7 +581,7 @@ async def alpha_error(ctx, error):
     if isinstance(error, Disabled):
         await ctx.send(error)
 
-@bot.command(name='test')
+@bot.command(name='test', help='[DEVS ONLY] has Kuro echo your message.')
 @commands.check(is_dev)
 @is_disabled()
 async def test(ctx, *args):
@@ -610,31 +609,6 @@ async def exit_error(ctx, error):
     if isinstance(error, Disabled):
         await ctx.send(error)
 
-@bot.command(name='bot')
-async def pleh(ctx):
-    embed = discord.Embed()
-    embed.set_footer(text="KuroBot")
-    #embed.add_field(name="about", value="will show an about dialog,\nshowing info about the bot.", inline=True)
-    embed.add_field(name="disable", value="[ADMIN ONLY] disables commands,\nseparate multiples with spaces.", inline=True)
-    #embed.add_field(name="google", value="lemme google that for ya. \nreturns a google URL for \nwhatever you typed in.", inline=True)
-    #embed.add_field(name="exit", value="[OWNER ONLY] shuts-down KuroBot.", inline=True)
-    #embed.add_field(name="alpha-warning", value="displays message relating\nto alpha release.")
-    embed.add_field(name="nsfw", value="[NSFW] multi-source nsfw command,\ndocs will be created soon.", inline=True)
-    #embed.add_field(name="whois", value="mention a user and get\ninfo about them.", inline=True)
-    #embed.add_field(name="kuro", value="simply sends a kuro.", inline=True)
-    #embed.add_field(name="uptime", value="returns the bot's uptime.", inline=True)
-    #embed.add_field(name="latency", value="returns the bot's latency.", inline=True)
-    embed.add_field(name="stop", value="[ADMIN ONLY] disconnects kuro from vc.", inline=True)
-    embed.add_field(name="join", value="has kuro join your channel.", inline=True)
-    embed.add_field(name="play", value="plays an uploaded mp3\nfile or youtube/soundcloud\netc. link", inline=True)
-    embed.add_field(name="purge", value="[ADMIN ONLY] purges up to 100 messages\nfrom a channel.", inline=True)
-    #embed.add_field(name="prefix", value="lists kuro's currently set prefix", inline=True)
-    embed.add_field(name="pause", value="pauses music playback.", inline=True)
-    embed.add_field(name="resume", value="resumes music playback.", inline=True)
-    embed.add_field(name="skip", value="skips current song.", inline=True)
-    embed.add_field(name="more to be added soon", value="please check back for\nmore commands!", inline=True)
-    await ctx.send(embed=embed)
-
 @bot.command(name='google', help='kuro will google whatever you typed.')
 @is_disabled()
 async def google(ctx, *args):
@@ -649,4 +623,4 @@ async def google_error(ctx, error):
     if isinstance(error, Disabled):
         await ctx.send(error)
 
-bot.run(TOKEN)
+bot.run(config.TOKEN)

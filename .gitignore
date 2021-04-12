@@ -1,2 +1,4 @@
-token
 resources/disabled.db
+utils/__pycache__
+config/__pycache__
+.vscode
