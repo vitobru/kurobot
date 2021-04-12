@@ -1,11 +1,13 @@
-#KuroBot v0.7.1-indev
-import discord, random, time, math, re, youtube_dl, os, uuid, datetime, redis, json, aiosqlite, sys
-from aiosqlite import Error
+#KuroBot v0.7.3-indev
+import discord, logging, random, time, math, re, youtube_dl, os, uuid, datetime, redis, json, sys
 from discord.ext import tasks, commands
 from typing import Optional
 
+import cogs.disable
 import utils.help
 import config.config as config
+
+logging.basicConfig(level=logging.INFO)
 
 intents = discord.Intents.default()
 intents.members = True
@@ -17,7 +19,7 @@ activity = discord.Activity(type=config.ACTIVITY_TYPE,
 
 bot = commands.Bot(command_prefix='$', activity=activity, help_command=utils.help.HelpCommand())
 
-version = "0.7.1-indev"
+version = "0.7.3-indev"
 
 vclients = {}
 
@@ -25,36 +27,18 @@ queues = redis.Redis(host='localhost',port=6379,db=0)
 
 platform = str(sys.platform)
 
+print('Kuro Bot v'+version+' - by vitobru and alatartheblue42')
+print('Running on: '+platform)
+
+for extension in config.EXTENSIONS:
+    try:
+        bot.load_extension(extension)
+    except:
+        logging.log(logging.ERROR, "Failed to load extension"+{extension}+"!")
+print("Loading extensions complete!")
+
 async def is_dev(ctx):
     return ctx.author.id in config.DEVS
-
-async def createtable():
-    db = await aiosqlite.connect(r'resources/disabled.db')
-    await db.execute("CREATE TABLE IF NOT EXISTS disabled (guild_id integer NOT NULL, command text NOT NULL);")
-    await db.commit()
-    await db.close() #relatively self-explanatory, but it checks if the table has been created or not and makes it if it isn't
-
-class Disabled(commands.CheckFailure):
-    pass
-
-def is_disabled():
-    async def predicate(ctx):
-        await createtable()
-        db = await aiosqlite.connect(r'resources/disabled.db')
-        cursor = await db.execute("SELECT guild_id, command FROM disabled WHERE guild_id = "+str(ctx.guild.id)+" AND command = '"+str(ctx.command)+"';")
-        fetch = await cursor.fetchone()
-        if fetch is not None: #checks to make sure the row isn't empty or non-existent or whatever
-            fetch = str(fetch[1])
-            if fetch in ("disable","enable"): #makes sure the disabled command isn't the disable or enable commands
-                await db.close()
-                raise Disabled("This command cannot be disabled.")
-            else: #handles if the disabled command is actually disabled
-                await db.close()
-                raise Disabled("This command has been disabled.")
-        else:
-            await db.close()
-            return True
-    return commands.check(predicate)
 
 class NoopLogger(object):
     def debug(self, msg):
@@ -63,9 +47,6 @@ class NoopLogger(object):
         pass
     def error(self, msg):
         pass
-
-print('Kuro Bot v'+version+' - by vitobru and alatartheblue42')
-print('Running on: '+platform)
 
 @tasks.loop(seconds=5.0)
 async def ensure_queue_loop(): #facilitates the queue for the bot's music feature
@@ -114,85 +95,29 @@ async def on_message(message):
     await bot.process_commands(message)
 
 @bot.command(name='queue', help='queue?')
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def queue(ctx):
     queue = queues.get(ctx.guild.id)
     await ctx.send(queue)
 
 @queue.error
 async def queue_error(ctx, error):
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
-@bot.command(name='disable', help='hopefully disables the specified command.')
-@commands.has_guild_permissions(manage_guild=True)
-async def disable(ctx, arg):
-    await createtable() #makes sure that the table is created, and ensures its creation if not
-    db = await aiosqlite.connect(r'resources/disabled.db')
-    try:
-        arg = str(arg)
-        insert = """INSERT INTO disabled
-        VALUES ("""+str(ctx.guild.id)+""", '"""+arg+"""');"""
-        await db.execute(insert)
-        await db.commit()
-        await db.close()
-        await ctx.send("Success.")
-    except: #remnant error handling from when i was trying to troubleshoot this goddamn system -lillie
-        insert = """INSERT INTO disabled
-        VALUES ("""+str(ctx.guild.id)+""", '"""+arg+"""');"""
-        await ctx.send("Couldn't perform operation.")
-        await ctx.send("The attempted query was: `"+insert+"`")
-        await db.close()
-
-@disable.error
-async def disable_error(ctx, error):
-    if isinstance(error, commands.CheckFailure):
-        await ctx.send("You must have Manage Server permissions enabled. Sorry.")
-#yes, error handling would technically be overwritten by this, but since the database works, i don't fucking care :)
-
-@bot.command(name='enable', help='hopefully re-enables the specified command.')
-@commands.has_guild_permissions(manage_guild=True)
-async def enable(ctx, arg):
-    arg = str(arg)
-    await createtable()
-    db = await aiosqlite.connect(r'resources/disabled.db')
-    try:
-        cursor = await db.execute("SELECT guild_id, command FROM disabled WHERE guild_id = "+str(ctx.guild.id)+" AND command = '"+arg+"';")
-        delete = """DELETE FROM disabled
-        WHERE guild_id = """+str(ctx.guild.id)+"""
-        AND command = '"""+arg+"""';
-        """
-        await cursor.execute(delete)
-        await db.commit()
-        await db.close()
-        await ctx.send("Success.")
-    except:
-        delete = """DELETE FROM disabled
-        WHERE guild_id = """+str(ctx.guild.id)+"""
-        AND command = '"""+arg+"""';
-        """
-        await ctx.send("Couldn't perform operation.")
-        await ctx.send("The attempted query was: `"+delete+"`")
-        await db.close()     
-
-@enable.error
-async def enable_error(ctx, error):
-    if isinstance(error, commands.CheckFailure):
-        await ctx.send("You must have Manage Server permissions enabled. Sorry.")
-
 @bot.command(name='prefix', help='fetches kuro\'s current prefix.')
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def prefix(ctx):
     response = "The current set prefix is: `"+bot.command_prefix+"`"
     await ctx.send(response)
 
 @prefix.error
 async def prefix_error(ctx, error):
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.command(name='invite', help='sends an embed with kuro\'s invite link.')
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def invite(ctx):
     embed = discord.Embed(
         title="KuroBot v"+version,
@@ -205,12 +130,12 @@ async def invite(ctx):
 
 @invite.error
 async def invite_error(ctx, error):
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.group(name='nsfw', help='contains NSFW commands.')
 @commands.is_nsfw()
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def nsfw(ctx):
     if ctx.invoked_subcommand is None:
         await ctx.send('NSFW isn\'t a command. It\'s a group.')
@@ -219,7 +144,7 @@ async def nsfw(ctx):
 async def nsfw_channel(ctx, error):
     if isinstance(error, commands.errors.NSFWChannelRequired):
         await ctx.send("This isn't an NSFW channel, dumbass.")
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @nsfw.command(name='kiss')
@@ -274,7 +199,7 @@ async def rule34(ctx):
     await ctx.send("**Source coming soon!**")
 
 @bot.command(name='join', help='has kuro join the voice channel you are in.')
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def join(ctx):
     await ctx.send("If I do not connect to the channel, leave and rejoin the voice channel to mitigate this issue. Thank you! :heart:")
     for vc in ctx.guild.voice_channels:
@@ -286,12 +211,12 @@ async def join(ctx):
 
 @join.error
 async def join_error(ctx, error):
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.command(name='stop', help='has kuro stop any playing music and leave the VC')
 @commands.has_guild_permissions(priority_speaker=True)
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def stop(ctx):
     if(vclients[ctx.guild.id]):
         await vclients[ctx.guild.id].disconnect()
@@ -301,11 +226,11 @@ async def stop(ctx):
 async def stop_error(ctx, error):
     if isinstance(error, commands.CheckFailure):
         await ctx.send("You must have Priority Speaker permissions.")
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.command(name='play', help='has kuro play a youtube link or uploaded file.')
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def play(ctx, link: Optional[str]):
     if link is not None:
         linkstr = "".join(link)
@@ -399,11 +324,11 @@ async def play(ctx, link: Optional[str]):
 
 @play.error
 async def play_error(ctx, error):
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.command(name='pause')
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def pause(ctx):
     if(vclients[ctx.guild.id].is_paused()):
         await ctx.send("I'm already paused.")
@@ -414,11 +339,11 @@ async def pause(ctx):
 
 @pause.error
 async def pause_error(ctx, error):
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.command(name='resume')
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def resume(ctx):
     if(vclients[ctx.guild.id].is_playing()):
         await ctx.send("I'm already playing something.")
@@ -429,11 +354,11 @@ async def resume(ctx):
 
 @resume.error
 async def resume_error(ctx, error):
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.command(name='skip')
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def skip(ctx):
     if(vclients[ctx.guild.id]):
         vclients[ctx.guild.id].stop()
@@ -443,12 +368,12 @@ async def skip(ctx):
 
 @skip.error
 async def skip_error(ctx, error):
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.command(name='purge', help='has kuro delete up to 100 messages.')
 @commands.has_guild_permissions(manage_messages=True)
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def purge(ctx, arg):
     try:
         howmany = int(arg)
@@ -467,11 +392,11 @@ async def purge(ctx, arg):
 async def purge_error(ctx, error):
     if isinstance(error, commands.CheckFailure):
         await ctx.send("You must have Manage Messages permissions enabled. Sorry.")
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.command(name='whois', help='fetches a mentioned user\'s info.')
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def whois(ctx, member: discord.Member):
     embed = discord.Embed()
     rolenames = []
@@ -499,11 +424,11 @@ async def whois(ctx, member: discord.Member):
 
 @whois.error
 async def whois_error(ctx, error):
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.command(name='kuro', help='sends a kuro.')
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def kuro(ctx):
     file = discord.File("resources/kuro.png", filename="kuro.png")
     embed = discord.Embed(title="Kuro")
@@ -513,11 +438,11 @@ async def kuro(ctx):
 
 @kuro.error
 async def kuro_error(ctx, error):
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.command(name='latency', help="displays kuro's current latency")
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def latency(ctx):
     timestr = str(round(bot.latency,3))
     timestr = timestr.replace(".","")
@@ -529,11 +454,11 @@ async def latency(ctx):
 
 @latency.error
 async def latency_error(ctx, error):
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.command(name='uptime', help='will display an embed showing how long kuro has been running for.')
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def uptime(ctx):
     # implementing part of the GNU coreutils uptime
     uptime=math.floor(time.time()-initTime)
@@ -551,26 +476,26 @@ async def uptime(ctx):
 
 @uptime.error
 async def uptime_error(ctx, error):
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.command(name='about', help='will show an about dialog,\nshowing info about the bot.')
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def about(ctx):
     embed = discord.Embed(title="KuroBot v"+version, description="A bot written in discord.py by\nvito#1072 and\nalatartheblue42#1891.")
     embed.set_thumbnail(url=bot.user.avatar_url)
     embed.set_footer(text="KuroBot")
     embed.add_field(name="Website", value="http://sgecrest.ddns.net")
-    embed.add_field(name="GitHub", value="https://github.com/vitobru/kurobot")
+    embed.add_field(name="GitHub", value=config.REPO_LINK)
     await ctx.send(embed=embed)
 
 @about.error
 async def about_error(ctx, error):
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.command(name='alpha-warning', help='displays message relating\nto alpha release.')
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def alpha(ctx):
     embed = discord.Embed(title="This is only an alpha release!", description="Kuro is currently only in her alpha release stage,\nmeaning that she's not perfect.\nPlease submit any complaints to:\nalatartheblue42#1891 or vito#1072")
     embed.set_thumbnail(url=bot.user.avatar_url)
@@ -579,12 +504,12 @@ async def alpha(ctx):
 
 @alpha.error
 async def alpha_error(ctx, error):
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.command(name='test', help='[DEVS ONLY] has Kuro echo your message.')
 @commands.check(is_dev)
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def test(ctx, *args):
     args = " ".join(args)
     await ctx.send(args)
@@ -593,12 +518,12 @@ async def test(ctx, *args):
 async def test_error(ctx, error):
     if isinstance(error, commands.CheckFailure):
         await ctx.send('You don\'t have permission to use that command.')
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.command(name='exit', help="[OWNER ONLY] shuts-down KuroBot.")
 @commands.check(is_dev)
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def exit(ctx):
     await ctx.send("Okay, master...")
     await bot.logout()
@@ -607,11 +532,11 @@ async def exit(ctx):
 async def exit_error(ctx, error):
     if isinstance(error, commands.CheckFailure):
         await ctx.send('You don\'t have permission to make me leave.')
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 @bot.command(name='google', help='kuro will google whatever you typed.')
-@is_disabled()
+@cogs.disable.Disable.is_disabled()
 async def google(ctx, *args):
     query = "+".join(args)
     embed = discord.Embed(description="https://www.google.com/search?hl=en_US&q="+query)
@@ -621,7 +546,7 @@ async def google(ctx, *args):
 
 @google.error
 async def google_error(ctx, error):
-    if isinstance(error, Disabled):
+    if isinstance(error, cogs.disable.Disabled):
         await ctx.send(error)
 
 if __name__ == '__main__':

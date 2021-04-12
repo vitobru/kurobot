@@ -1,5 +1,4 @@
 resources/disabled.db
 utils/__pycache__
-config/__pycache__
+config/
 .vscode
-config/config.py
