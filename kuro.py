@@ -1,5 +1,5 @@
-#KuroBot v0.6.3-indev
-import discord, random, time, math, re, youtube_dl, os, uuid, datetime, redis, json, aiosqlite
+#KuroBot v0.6.4-indev
+import discord, random, time, math, re, youtube_dl, os, uuid, datetime, redis, json, aiosqlite, sys
 from aiosqlite import Error
 from discord.ext import tasks, commands
 from typing import Optional
@@ -14,17 +14,24 @@ TOKEN=str(open("token","r").read())
 
 bot = commands.Bot(command_prefix='$')
 
-version = "0.6.3-indev"
+version = "0.6.4-indev"
 
 vclients = {}
 
 queues = redis.Redis(host='localhost',port=6379,db=0)
 
+platform = str(sys.platform)
+
+devs = [408372847652634624,261232036625252352] #if you decide to make a fork of this bot, replace these user IDs with those of your team
+
+async def is_dev(ctx):
+    return ctx.author.id in devs
+
 async def createtable():
     db = await aiosqlite.connect(r'resources/disabled.db')
     await db.execute("CREATE TABLE IF NOT EXISTS disabled (guild_id integer NOT NULL, command text NOT NULL);")
     await db.commit()
-    await db.close()
+    await db.close() #relatively self-explanatory, but it checks if the table has been created or not and makes it if it isn't
 
 class Disabled(commands.CheckFailure):
     pass
@@ -48,9 +55,6 @@ def is_disabled():
             return True
     return commands.check(predicate)
 
-async def is_dev(ctx):
-    return ctx.author.id in (408372847652634624,261232036625252352)
-
 class NoopLogger(object):
     def debug(self, msg):
         pass
@@ -60,9 +64,10 @@ class NoopLogger(object):
         pass
 
 print('Kuro Bot v'+version+' - by vitobru and alatartheblue42')
+print('Running on: '+platform)
 
 @tasks.loop(seconds=5.0)
-async def ensure_queue_loop():
+async def ensure_queue_loop(): #facilitates the queue for the bot's music feature
     try:
         for vc in vclients.values():
             if vc.is_playing() or vc.is_paused():
@@ -86,10 +91,12 @@ ensure_queue_loop.start()
 async def clear_mp3():
     try:
         print("Clearing temp files...")
-        os.system("rm -f resources/*.mp3")
-        os.system("rm -f *.rdb")
-        os.system("del /q resources\*.mp3")
-        os.system("del /q resources\*.tmp")
+        if sys.platform.startswith('linux'):
+            os.system("rm -f resources/*.mp3")
+            os.system("rm -f *.rdb")
+        elif sys.platform.startswith('win32'):
+            os.system("del /q resources\*.mp3")
+            os.system("del /q resources\*.tmp")
     except:
         print("No files were found to clear.")
 clear_mp3.start()
