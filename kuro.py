@@ -1,4 +1,4 @@
-#KuroBot v0.7.0-indev
+#KuroBot v0.7.1-indev
 import discord, random, time, math, re, youtube_dl, os, uuid, datetime, redis, json, aiosqlite, sys
 from aiosqlite import Error
 from discord.ext import tasks, commands
@@ -12,9 +12,12 @@ intents.members = True
 
 initTime = time.time()
 
-bot = commands.Bot(command_prefix='$', help_command=utils.help.HelpCommand())
+activity = discord.Activity(type=config.ACTIVITY_TYPE,
+                            name=config.ACTIVITY_NAME)
 
-version = "0.7.0-indev"
+bot = commands.Bot(command_prefix='$', activity=activity, help_command=utils.help.HelpCommand())
+
+version = "0.7.1-indev"
 
 vclients = {}
 
