@@ -1,13 +1,12 @@
-#KuroBot v0.7.3-indev
-import discord, logging, random, time, math, re, youtube_dl, os, uuid, datetime, redis, json, sys
+#KuroBot v0.7.5-indev
+import discord, logging, random, time, math, os, datetime, sys
 from discord.ext import tasks, commands
-from typing import Optional
 
 import cogs.disable
 import utils.help
 import config.config as config
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 
 intents = discord.Intents.default()
 intents.members = True
@@ -19,55 +18,24 @@ activity = discord.Activity(type=config.ACTIVITY_TYPE,
 
 bot = commands.Bot(command_prefix='$', activity=activity, help_command=utils.help.HelpCommand())
 
-version = "0.7.3-indev"
-
-vclients = {}
-
-queues = redis.Redis(host='localhost',port=6379,db=0)
+version = "0.7.5-indev"
 
 platform = str(sys.platform)
 
 print('Kuro Bot v'+version+' - by vitobru and alatartheblue42')
 print('Running on: '+platform)
+print('Loading extensions...')
 
 for extension in config.EXTENSIONS:
     try:
         bot.load_extension(extension)
-    except:
-        logging.log(logging.ERROR, "Failed to load extension"+{extension}+"!")
+    except Exception as err:
+        print(err)
+        logging.log(logging.ERROR, "Failed to load extension: {extension}!")
 print("Loading extensions complete!")
 
 async def is_dev(ctx):
     return ctx.author.id in config.DEVS
-
-class NoopLogger(object):
-    def debug(self, msg):
-        pass
-    def warning(self, msg):
-        pass
-    def error(self, msg):
-        pass
-
-@tasks.loop(seconds=5.0)
-async def ensure_queue_loop(): #facilitates the queue for the bot's music feature
-    try:
-        for vc in vclients.values():
-            if vc.is_playing() or vc.is_paused():
-                return
-            else:
-                next_song=""
-                queue=[]
-                try:
-                    queue = json.loads(queues.get(vc.guild.id))
-                    next_song = queue[0]
-                    queue = queue[1:]
-                    queues.set(vc.guild.id,json.dumps(queue))
-                    vc.play(discord.FFmpegPCMAudio(next_song))
-                except:
-                    pass
-    except:
-        pass
-ensure_queue_loop.start()
 
 @tasks.loop(minutes=30)
 async def clear_mp3():
@@ -93,17 +61,6 @@ async def on_message(message):
         return
 
     await bot.process_commands(message)
-
-@bot.command(name='queue', help='queue?')
-@cogs.disable.Disable.is_disabled()
-async def queue(ctx):
-    queue = queues.get(ctx.guild.id)
-    await ctx.send(queue)
-
-@queue.error
-async def queue_error(ctx, error):
-    if isinstance(error, cogs.disable.Disabled):
-        await ctx.send(error)
 
 @bot.command(name='prefix', help='fetches kuro\'s current prefix.')
 @cogs.disable.Disable.is_disabled()
@@ -197,179 +154,6 @@ async def gelbooru(ctx):
 @nsfw.command(name='rule34')
 async def rule34(ctx):
     await ctx.send("**Source coming soon!**")
-
-@bot.command(name='join', help='has kuro join the voice channel you are in.')
-@cogs.disable.Disable.is_disabled()
-async def join(ctx):
-    await ctx.send("If I do not connect to the channel, leave and rejoin the voice channel to mitigate this issue. Thank you! :heart:")
-    for vc in ctx.guild.voice_channels:
-        for memb in vc.members:
-            if memb.id == ctx.author.id:
-                vclients[ctx.guild.id] = await vc.connect()
-            else:
-                await ctx.send('You must be in a VC for me to join.')
-
-@join.error
-async def join_error(ctx, error):
-    if isinstance(error, cogs.disable.Disabled):
-        await ctx.send(error)
-
-@bot.command(name='stop', help='has kuro stop any playing music and leave the VC')
-@commands.has_guild_permissions(priority_speaker=True)
-@cogs.disable.Disable.is_disabled()
-async def stop(ctx):
-    if(vclients[ctx.guild.id]):
-        await vclients[ctx.guild.id].disconnect()
-        await ctx.send("Stopping...")
-
-@stop.error
-async def stop_error(ctx, error):
-    if isinstance(error, commands.CheckFailure):
-        await ctx.send("You must have Priority Speaker permissions.")
-    if isinstance(error, cogs.disable.Disabled):
-        await ctx.send(error)
-
-@bot.command(name='play', help='has kuro play a youtube link or uploaded file.')
-@cogs.disable.Disable.is_disabled()
-async def play(ctx, link: Optional[str]):
-    if link is not None:
-        linkstr = "".join(link)
-        validator = re.compile(
-        r'^(?:http)s?://' # http:// or https://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
-        r'localhost|' #localhost...
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
-        r'(?::\d+)?' #optional port
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-        if(re.match(validator, linkstr)is not None):
-            if "list" in linkstr:
-                await ctx.send("Playlist functionality is not supported in this bot. Sorry!")
-                return
-            if "playlist" in linkstr:
-                await ctx.send("Playlist functionality is not supported in this bot. Sorry!")
-                return
-            filename = str(uuid.uuid4())
-            ydl_opts = {
-                'format': 'bestaudio/best',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
-                'outtmpl': "resources/"+filename+".tmp",
-                'logger': NoopLogger()
-            }
-            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([linkstr])
-                filename = "resources/"+filename+".mp3"
-                for vc in ctx.guild.voice_channels:
-                    for memb in vc.members:
-                        if memb.id == ctx.author.id:
-                            try:
-                                if(vclients[ctx.guild.id]):
-                                    if(vclients[ctx.guild.id].is_playing() or vclients[ctx.guild.id].is_paused()):
-                                        queue = []
-                                        try:
-                                            queue = json.loads(queues.get(ctx.guild.id))
-                                        except:
-                                            queue = [filename]
-                                        if(isinstance(queue, bytes)):
-                                            queue = [filename]
-                                        else:
-                                            queue.append(filename)
-                                        queues.set(ctx.guild.id,json.dumps(queue))
-                                        await ctx.send("Added to queue.")
-                                    else:
-                                        await ctx.send("Playing now...")
-                                        vclients[ctx.guild.id].play(discord.FFmpegPCMAudio(filename))
-                            except:
-                                vclients[ctx.guild.id] = await vc.connect()
-                                await ctx.channel.send("Playing now...")
-                                vclients[ctx.guild.id].play(discord.FFmpegPCMAudio(filename))
-        else:
-            await ctx.send("Invalid music link.")
-            return
-    else:
-        if(len(ctx.message.attachments)>0):
-            if("mp3" in ctx.message.attachments[0].url):
-                filename = "resources/"+str(uuid.uuid4())+".mp3"
-                await ctx.message.attachments[0].save(filename)
-                for vc in ctx.guild.voice_channels:
-                    for memb in vc.members:
-                        if memb.id == ctx.author.id:
-                            try:
-                                if(vclients[ctx.guild.id]):
-                                    if(vclients[ctx.guild.id].is_playing() or vclients[ctx.guild.id].is_paused()):
-                                        queue = []
-                                        try:
-                                            queue = json.loads(queues.get(ctx.guild.id))
-                                        except:
-                                            queue = [filename]
-                                        if(isinstance(queue, bytes)):
-                                            queue = [filename]
-                                        else:
-                                            queue.append(filename)
-                                        queues.set(ctx.guild.id,json.dumps(queue))
-                                        await ctx.send("Added to queue.")
-                                    else:
-                                        await ctx.send("Playing now...")
-                                        vclients[ctx.guild.id].play(discord.FFmpegPCMAudio(filename))
-                            except:
-                                vclients[ctx.guild.id] = await vc.connect()
-                                await ctx.send("Playing now...")
-                                vclients[ctx.guild.id].play(discord.FFmpegPCMAudio(filename))
-            else:
-                await ctx.send("I can't play anything from attachments other than MP3 files.")
-                return
-
-@play.error
-async def play_error(ctx, error):
-    if isinstance(error, cogs.disable.Disabled):
-        await ctx.send(error)
-
-@bot.command(name='pause')
-@cogs.disable.Disable.is_disabled()
-async def pause(ctx):
-    if(vclients[ctx.guild.id].is_paused()):
-        await ctx.send("I'm already paused.")
-        return
-    else:
-        vclients[ctx.guild.id].pause()
-        await ctx.send("Pausing...")
-
-@pause.error
-async def pause_error(ctx, error):
-    if isinstance(error, cogs.disable.Disabled):
-        await ctx.send(error)
-
-@bot.command(name='resume')
-@cogs.disable.Disable.is_disabled()
-async def resume(ctx):
-    if(vclients[ctx.guild.id].is_playing()):
-        await ctx.send("I'm already playing something.")
-        return
-    else:
-        vclients[ctx.guild.id].resume()
-        await ctx.send("Resuming...")
-
-@resume.error
-async def resume_error(ctx, error):
-    if isinstance(error, cogs.disable.Disabled):
-        await ctx.send(error)
-
-@bot.command(name='skip')
-@cogs.disable.Disable.is_disabled()
-async def skip(ctx):
-    if(vclients[ctx.guild.id]):
-        vclients[ctx.guild.id].stop()
-        await ctx.send("Skipping...")
-    else:
-        await ctx.send("I'm not playing anything.")
-
-@skip.error
-async def skip_error(ctx, error):
-    if isinstance(error, cogs.disable.Disabled):
-        await ctx.send(error)
 
 @bot.command(name='purge', help='has kuro delete up to 100 messages.')
 @commands.has_guild_permissions(manage_messages=True)

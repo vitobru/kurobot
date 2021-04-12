@@ -1,3 +1,4 @@
+"""Handles the SQL database used for disabling and re-enabling commands"""
 import aiosqlite
 from aiosqlite import Error
 
