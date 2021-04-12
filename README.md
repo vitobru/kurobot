@@ -1,4 +1,4 @@
-# Kuro Bot v.0.6.4-indev
+# Kuro Bot v.0.7.0-indev
 
 ###### A Discord bot created by Vitobru and Alatar
 
@@ -20,10 +20,10 @@ pacman -S ffmpeg
 pacman -S redis
 ```
 
-Please note that Windows is not supported, you will need to fix the issues yourself.
+Please note that Windows is not fully supported yet, you will need to fix the issues yourself.
 
 **Team:**
 
 Lead Programmers - vito and alatartheblue42
 
-**Contact:** [lillieerinhp@gmail.com](mailto:lillieerinhp@gmail.com) if you wanna email me about the progress. Otherwise, just tweet me [@lillieerinw](https://twitter.com/lillieerinw/).
+**Contact:** [Click here](mailto:lillieerinhp@gmail.com) if you wanna email me about the progress. Otherwise, just tweet me [@lillieerinw](https://twitter.com/lillieerinw/).

@@ -623,4 +623,5 @@ async def google_error(ctx, error):
     if isinstance(error, Disabled):
         await ctx.send(error)
 
-bot.run(config.TOKEN)
+if __name__ == '__main__':
+    bot.run(config.TOKEN)
