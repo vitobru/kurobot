@@ -25,10 +25,8 @@ queues = redis.Redis(host='localhost',port=6379,db=0)
 
 platform = str(sys.platform)
 
-devs = [408372847652634624,261232036625252352] #if you decide to make a fork of this bot, replace these user IDs with those of your team
-
 async def is_dev(ctx):
-    return ctx.author.id in devs
+    return ctx.author.id in config.DEVS
 
 async def createtable():
     db = await aiosqlite.connect(r'resources/disabled.db')
