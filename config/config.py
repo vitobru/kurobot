@@ -4,7 +4,7 @@ from discord.enums import ActivityType
 # Bot token - keep private!
 TOKEN = ""
 
-# Owner and Dev user ID(s)
+# Owner user ID
 OWNER = 408372847652634624  # vito#1072 as of 04-11-2021
 
 # Activity settings
