@@ -1,7 +1,7 @@
 # Kuro Bot v.0.7.5-indev
 
 ###### A Discord bot created by Vitobru and Alatar
-![KuroBot](http://sgecrest.ddns.net/assets/kurobot%20logo.png)
+![KuroBot](http://kurobot.ddns.net/assets/kurobot%20logo.png)
 [![GitHub license](https://img.shields.io/badge/license-MPL%202.0-blue.svg?style=flat-square)](https://raw.githubusercontent.com/vitobru/kurobot/master/LICENSE)
 [![Chat / Support](https://img.shields.io/badge/Chat%20%2F%20Support-discord-7289DA.svg?style=flat-square)](https://discord.gg/CMR73Tf)
 
